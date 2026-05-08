@@ -52,6 +52,7 @@ export function ClientView() {
   const [useActuals, setUseActuals] = useState(true);
   const [termSheetOpen, setTermSheetOpen] = useState(false);
   const [seasonality, setSeasonality] = useState('even');
+  const [mcSigma, setMcSigma] = useState(0.22);
   const [editor, setEditor] = useState(null);
   const [clientEditor, setClientEditor] = useState(null);
   const fx = useFX();
@@ -125,8 +126,8 @@ export function ClientView() {
   );
 
   const mc = useMemo(
-    () => runMonteCarlo(imports, { fxRate: fx.rate, quarterlyMix }),
-    [imports, fx.rate, quarterlyMix],
+    () => runMonteCarlo(imports, { fxRate: fx.rate, quarterlyMix, vol: mcSigma }),
+    [imports, fx.rate, quarterlyMix, mcSigma],
   );
 
   const projectionDataWithBands = useMemo(() => {
@@ -428,23 +429,41 @@ export function ClientView() {
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2 mb-4 text-xs" style={{ fontFamily: 'Söhne, sans-serif' }}>
-          <span style={{ color: colors.muted }}>Quarterly import seasonality:</span>
-          {Object.entries(QUARTERLY_PRESETS).map(([key, preset]) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => setSeasonality(key)}
-              className="px-2.5 py-1 border transition-colors"
-              style={{
-                borderColor: seasonality === key ? colors.ink : colors.rule,
-                backgroundColor: seasonality === key ? colors.ink : 'transparent',
-                color: seasonality === key ? colors.paper : colors.muted,
-              }}
-            >
-              {preset.label} · {preset.mix.map(m => `${Math.round(m * 100)}`).join('/')}
-            </button>
-          ))}
+        <div className="flex items-center gap-x-4 gap-y-2 mb-4 text-xs flex-wrap" style={{ fontFamily: 'Söhne, sans-serif' }}>
+          <div className="flex items-center gap-2">
+            <span style={{ color: colors.muted }}>Quarterly import seasonality:</span>
+            {Object.entries(QUARTERLY_PRESETS).map(([key, preset]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setSeasonality(key)}
+                className="px-2.5 py-1 border transition-colors"
+                style={{
+                  borderColor: seasonality === key ? colors.ink : colors.rule,
+                  backgroundColor: seasonality === key ? colors.ink : 'transparent',
+                  color: seasonality === key ? colors.paper : colors.muted,
+                }}
+              >
+                {preset.label} · {preset.mix.map(m => `${Math.round(m * 100)}`).join('/')}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-2">
+            <span style={{ color: colors.muted }}>ETS volatility σ:</span>
+            <input
+              type="range"
+              min="15"
+              max="30"
+              step="1"
+              value={Math.round(mcSigma * 100)}
+              onChange={(e) => setMcSigma(Number(e.target.value) / 100)}
+              aria-label="Monte Carlo ETS volatility sigma"
+              style={{ accentColor: colors.accent, width: 120 }}
+            />
+            <span className="tabular-nums" style={{ color: colors.ink, minWidth: 28 }}>
+              {Math.round(mcSigma * 100)}%
+            </span>
+          </div>
         </div>
         <ResponsiveContainer width="100%" height={260}>
           <ComposedChart data={cashflowSeriesWithBands} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
@@ -694,6 +713,7 @@ export function ClientView() {
       {termSheetOpen && (
         <TermSheet
           client={selectedClient}
+          mcVol={mcSigma}
           onClose={() => setTermSheetOpen(false)}
         />
       )}

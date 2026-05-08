@@ -25,6 +25,7 @@ export function RMView() {
   const { clients } = useClientsStore();
   const [selectedClient, setSelectedClient] = useState(null);
   const [termSheetClient, setTermSheetClient] = useState(null);
+  const [mcSigma, setMcSigma] = useState(0.22);
   const fileInputRef = useRef(null);
   const fx = useFX();
 
@@ -48,7 +49,7 @@ export function RMView() {
       const cashflow = projectCBAMCashflow(c.imports, { fxRate: fx.rate });
       const peakWC = cashflow.totals.peakWorkingCapitalEUR;
       const peakWCPeriod = cashflow.totals.peakPeriod;
-      const mc = runMonteCarlo(c.imports, { fxRate: fx.rate, trials: 200 });
+      const mc = runMonteCarlo(c.imports, { fxRate: fx.rate, trials: 200, vol: mcSigma });
       const peakWCp10 = mc.peakWCPercentiles.p10;
       const peakWCp90 = mc.peakWCPercentiles.p90;
       let riskTier = 'low';
@@ -56,7 +57,7 @@ export function RMView() {
       if (exposureToRevenue > 0.01 || verifiedShare < 0.2) riskTier = 'high';
       return { ...c, cost2026, cost2030, cost2034, totalTonnes, verifiedShare, exposureToRevenue, riskTier, peakWC, peakWCPeriod, peakWCp10, peakWCp90 };
     });
-  }, [fx.rate, clients]);
+  }, [fx.rate, clients, mcSigma]);
 
   const portfolioTotals = useMemo(() => {
     return {
@@ -102,7 +103,23 @@ export function RMView() {
             {clients.length} corporate client{clients.length === 1 ? '' : 's'} · {clients.reduce((s, c) => s + c.imports.length, 0)} import lines · Powered by Carbon·Edge
           </div>
         </div>
-        <div className="flex items-center gap-2 text-xs" style={{ fontFamily: 'Söhne, sans-serif' }}>
+        <div className="flex items-center gap-3 text-xs" style={{ fontFamily: 'Söhne, sans-serif' }}>
+          <div className="flex items-center gap-2">
+            <span style={{ color: colors.muted }}>ETS σ:</span>
+            <input
+              type="range"
+              min="15"
+              max="30"
+              step="1"
+              value={Math.round(mcSigma * 100)}
+              onChange={(e) => setMcSigma(Number(e.target.value) / 100)}
+              aria-label="Monte Carlo ETS volatility sigma"
+              style={{ accentColor: colors.accent, width: 110 }}
+            />
+            <span className="tabular-nums" style={{ color: colors.ink, minWidth: 28 }}>
+              {Math.round(mcSigma * 100)}%
+            </span>
+          </div>
           <button
             type="button"
             onClick={downloadPortfolioFile}
@@ -379,6 +396,7 @@ export function RMView() {
       {termSheetClient && (
         <TermSheet
           client={termSheetClient}
+          mcVol={mcSigma}
           onClose={() => setTermSheetClient(null)}
         />
       )}

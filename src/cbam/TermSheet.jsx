@@ -14,13 +14,16 @@ import { runMonteCarlo } from './monteCarloEngine.js';
  * Inputs:
  *   client   — full client object (incl. imports[])
  *   deal     — optional overrides; defaults derive from CBAM exposure
+ *   mcVol    — annualised log-space σ for Monte Carlo (default 0.22). Passed
+ *              from the calling view's slider so the printed P10–P90 bands
+ *              match what the RM showed in-session.
  *   onClose  — close handler
  *
  * Print behaviour: the component injects @media print rules that hide the
  * toolbar and the rest of the app, leaving only the document. The RM clicks
  * Print, the OS print dialog opens, "Save as PDF" produces the deliverable.
  */
-export function TermSheet({ client, deal: dealOverride, onClose }) {
+export function TermSheet({ client, deal: dealOverride, mcVol = 0.22, onClose }) {
   const today = useMemo(() => new Date(), []);
   const fx = useFX();
   const reference = useMemo(
@@ -42,7 +45,7 @@ export function TermSheet({ client, deal: dealOverride, onClose }) {
     const sectorMix = aggregateBy(client.imports, i => CBAM_SECTORS[i.sector].label);
     const originMix = aggregateBy(client.imports, i => COUNTRY_DEFAULTS[i.origin]?.label ?? i.origin);
     const cashflow = projectCBAMCashflow(client.imports, { fxRate: fx.rate });
-    const mc = runMonteCarlo(client.imports, { fxRate: fx.rate, trials: 300 });
+    const mc = runMonteCarlo(client.imports, { fxRate: fx.rate, trials: 300, vol: mcVol });
     return {
       cost2026,
       cost2030,
@@ -60,7 +63,7 @@ export function TermSheet({ client, deal: dealOverride, onClose }) {
       mcTrials: mc.trials,
       mcVol: mc.vol,
     };
-  }, [client, fx.rate]);
+  }, [client, fx.rate, mcVol]);
 
   const deal = useMemo(() => {
     const ticket = round100k(exposure.cost2030 * 1.5);
