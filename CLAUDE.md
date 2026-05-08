@@ -48,7 +48,7 @@ esto requiere ser banco *y* tener motor de cálculo, que ningún proveedor
 
 ## 3. Estado actual y próximos pasos
 
-**Commit de referencia:** `a8d3433` (initial commit · MVP completo).
+**Commit de referencia:** `a92b0b3` (multi-client portfolio + localStorage).
 
 **Hecho ✅:**
 - Motor CBAM con lookup por CN code (Annex IV) + fallback sectorial, indirect
@@ -64,15 +64,19 @@ esto requiere ser banco *y* tener motor de cálculo, que ningún proveedor
   CBAM, peak WC sizing y P10–P90 range del MC.
 - Botones "Generate term sheet" en RM view y "View indicative term sheet" en
   ClientView.
+- **Persistencia multi-cliente**: store con localStorage (`cbam.clients.v1`),
+  CRUD de clientes y líneas de import vía modal portals (`ClientEditor`,
+  `ImportLineEditor`), `ClientSwitcher` en header, export/import de
+  portfolio en JSON con validación. Reset-to-seed disponible.
 
 **Pendiente 🚧 (no bloqueante para la propuesta):**
 - Tests del cashflowEngine + monteCarloEngine. Hoy no hay suite.
-- Persistencia: SAMPLE_CLIENTS está hardcoded en `cbamEngine.js`. Para uso
-  real → localStorage primero, backend después.
 - Slider de σ del Monte Carlo (15–30%) para que el RM lo ajuste en sala.
 - Web Worker para MC en RM view cuando la cartera crezca >10 clientes.
 - Pull live del precio CBAM oficial de la Comisión (cuando se publique desde
   feb 2027) — requiere build-time fetch o backend ETL.
+- Backend de persistencia (post-localStorage): cuando entre uso real, mover
+  el store a una API con auth.
 
 **Decisiones abiertas:**
 - ¿Branding final? Usamos "Carbon·Edge" como nombre del producto interno.
