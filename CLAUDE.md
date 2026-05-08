@@ -33,9 +33,9 @@ esto requiere ser banco *y* tener motor de cálculo, que ningún proveedor
 
 - **Frontend:** Vite 8 + React 19 + Tailwind 4 (artifact embebible, sin
   backend). recharts para gráficas, lucide-react para iconos.
-- **Build:** `npm run build` produce `dist/` estático (~670 kB JS gzipped).
-  Se puede embeber vía iframe + SSO en el portal de BBVA Net Cash o servir
-  como standalone.
+- **Build:** `npm run build` produce `dist/` estático (~691 kB JS minificado,
+  ~200 kB gzip). Se puede embeber vía iframe + SSO en el portal de BBVA
+  Net Cash o servir como standalone.
 - **Sin variables de entorno requeridas.** La única llamada de red es a
   Frankfurter (USD→EUR, ECB reference rates) que es free + CORS-enabled +
   con fallback a snapshot 0.92 si falla.
@@ -44,11 +44,12 @@ esto requiere ser banco *y* tener motor de cálculo, que ningún proveedor
   - `npm run dev` — vite dev server
   - `npm run build` — bundle de producción
   - `npm run lint` — eslint
+  - `npm run test` — vitest (CI mode), `npm run test:watch` para iterar
   - `npm run preview` — sirve `dist/`
 
 ## 3. Estado actual y próximos pasos
 
-**Commit de referencia:** `a92b0b3` (multi-client portfolio + localStorage).
+**Commit de referencia:** `c95f4b0` (E6.0 visual port).
 
 **Hecho ✅:**
 - Motor CBAM con lookup por CN code (Annex IV) + fallback sectorial, indirect
@@ -56,8 +57,10 @@ esto requiere ser banco *y* tener motor de cálculo, que ningún proveedor
   price del país de origen.
 - Cashflow trimestral con regla 50% Art. 22(2), surrender Q3 anual, FIFO de
   lots, seasonality configurable (4 presets).
-- Monte Carlo sobre el path ETS (random walk log-space, σ=22%, 500 trials)
-  con P10/P50/P90 propagados a costes anuales y peak working capital.
+- Monte Carlo sobre el path ETS (random walk log-space, σ=22% default, 500
+  trials) con P10/P50/P90 propagados a costes anuales y peak working capital.
+- **Slider σ Monte Carlo** (15–30%) en ClientView + RMView; el TermSheet
+  hereda la σ activa vía prop `mcVol` y el footer de metodología la cita.
 - Panel de Data Sources con FX live (Frankfurter) + snapshots de EUA spot
   (EEX), World Bank Carbon Pricing Dashboard, CN-code defaults, ETS forecast.
 - Term sheet imprimible vía portal modal + print CSS, con linkage rationale
@@ -68,15 +71,23 @@ esto requiere ser banco *y* tener motor de cálculo, que ningún proveedor
   CRUD de clientes y líneas de import vía modal portals (`ClientEditor`,
   `ImportLineEditor`), `ClientSwitcher` en header, export/import de
   portfolio en JSON con validación. Reset-to-seed disponible.
+- **Test suite (vitest)**: 25 tests cubriendo cashflowEngine (Art. 22(1)/(2),
+  FIFO, seasonality presets, pricePath override) y monteCarloEngine
+  (invariantes P10≤P50≤P90, anchor 2026 colapsado, σ-sensitivity, vol/trials
+  metadata). Scripts `npm run test` y `npm run test:watch`.
+- **Estilismo E6.0**: tokens (canvas/panel/ink/NFQ) + Inter/JetBrains Mono +
+  primitives Card/Stat/KpiCard/Pill/MicroLabel + KPI hero rows + segmented
+  controls pill + Header rebuild + TermSheet rewrite. Mismo lenguaje visual
+  que `@e60/ui` para que el demo lea como sibling de la plataforma.
 
 **Pendiente 🚧 (no bloqueante para la propuesta):**
-- Tests del cashflowEngine + monteCarloEngine. Hoy no hay suite.
-- Slider de σ del Monte Carlo (15–30%) para que el RM lo ajuste en sala.
 - Web Worker para MC en RM view cuando la cartera crezca >10 clientes.
 - Pull live del precio CBAM oficial de la Comisión (cuando se publique desde
   feb 2027) — requiere build-time fetch o backend ETL.
 - Backend de persistencia (post-localStorage): cuando entre uso real, mover
   el store a una API con auth.
+- Code-splitting del bundle (~691 kB JS, 200 kB gz) — vía `import()` dinámico
+  de TermSheet/RMView si hace falta servir la vista cliente sola.
 
 **Decisiones abiertas:**
 - ¿Branding final? Usamos "Carbon·Edge" como nombre del producto interno.
@@ -87,8 +98,8 @@ esto requiere ser banco *y* tener motor de cálculo, que ningún proveedor
 ## Cómo trabajar en este proyecto con Claude
 
 **Reglas de la casa:**
-- Antes de cerrar cualquier cambio: `npm run lint && npm run build`. Build
-  pasó con 0 warnings de lint en HEAD; mantenerlo así.
+- Antes de cerrar cualquier cambio: `npm run lint && npm run test && npm run build`.
+  HEAD pasa los tres con 0 warnings; mantenerlo así.
 - **No commitear sin confirmación explícita** del usuario.
 - Para refresco de datos: editar el archivo correspondiente en `src/cbam/data/`
   y bumpear `asOf`. La firma del motor es estable; reemplazar valores no debe
@@ -99,16 +110,32 @@ esto requiere ser banco *y* tener motor de cálculo, que ningún proveedor
   los cambios son frescos.
 - Comentarios: solo cuando el *por qué* sea no-obvio. El qué se infiere del
   código.
-- Mantener la estética sobria: navy/cream/teal, Tiempos/Söhne, sin emojis ni
-  gradientes en producción.
+- **Estilismo E6.0** (alineado con `@e60/ui`): canvas `#f4f4f6` + panels
+  `#fff` + ink scale 5-step + acentos NFQ (red/orange/blue/purple/green) +
+  Inter (body/headers) + JetBrains Mono (micro-labels uppercase
+  `tracking-[0.12em]`). Componentes en `ui.jsx`: `Card`, `Stat`, `KpiCard`,
+  `Pill`, `MicroLabel`. Sin Tiempos / Söhne / navy / cream / teal — quedaron
+  fuera en `c95f4b0`. Sin emojis ni gradientes en producción.
+- **Charts**: paleta cíclica vía `chartSeriesFills`
+  (blue → orange → purple → green → red). No introducir nuevos hex inline.
+- **Tests**: cualquier cambio en `cashflowEngine` o `monteCarloEngine` debe
+  ir con su test correspondiente en `src/cbam/__tests__/`. Property tests
+  preferidos sobre tests con seed (P10≤P50≤P90, monotonicidad σ, anchor
+  determinista) — más resistentes y más expresivos.
 
 **Donde está cada cosa:**
 - Cálculos: `src/cbam/cbamEngine.js`, `cashflowEngine.js`, `monteCarloEngine.js`.
 - Datos calibrables: `src/cbam/data/`.
 - Feed live (FX): `src/cbam/feeds/fxFeed.js`.
 - UI por rol: `ClientView.jsx`, `RMView.jsx`.
+- Persistencia: `src/cbam/store/clientsStore.js` (localStorage,
+  `useSyncExternalStore`) y `portfolioIO.js` (download / file-pick).
+- Editores modales: `ClientEditor.jsx`, `ImportLineEditor.jsx`, `ClientSwitcher.jsx`.
 - Print artifact: `TermSheet.jsx` (portal a `body`, print CSS oculta el resto).
 - Trazabilidad: `DataSourcesPanel.jsx` + `data/sources.js`.
+- Design tokens + primitives: `src/cbam/theme.js` (canvas/panel/ink/NFQ +
+  radii/shadows/fonts) y `src/cbam/ui.jsx` (Card, Stat, KpiCard, Pill, MicroLabel).
+- Tests: `src/cbam/__tests__/cashflowEngine.test.js`, `monteCarloEngine.test.js`.
 
 **Frame regulatorio (referencia rápida):**
 - Reg. (UE) 2023/956 — base CBAM (Art. 21 precio cert, Art. 22 surrender +
