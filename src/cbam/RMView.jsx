@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef } from 'react';
-import { ChevronRight, Target, Zap, Shield, Download, Upload } from 'lucide-react';
+import { ChevronRight, Target, Zap, Shield, Download, Upload, Briefcase, TrendingUp, AlertTriangle, Sparkles } from 'lucide-react';
 import {
   BarChart,
   Bar,
@@ -10,9 +10,9 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { CBAM_SECTORS, calculateCBAMCost } from './cbamEngine.js';
-import { colors } from './theme.js';
+import { colors, canvas } from './theme.js';
 import { formatEUR } from './format.js';
-import { Card, Stat, Pill } from './ui.jsx';
+import { Card, Pill, KpiCard } from './ui.jsx';
 import { TermSheet } from './TermSheet.jsx';
 import { useFX } from './feeds/fxFeed.js';
 import { DataSourcesPanel } from './DataSourcesPanel.jsx';
@@ -90,20 +90,20 @@ export function RMView() {
   );
 
   return (
-    <div className="px-8 py-6 space-y-6" style={{ backgroundColor: colors.paper, minHeight: 'calc(100vh - 73px)' }}>
+    <div className="px-8 py-6 space-y-6" style={{ backgroundColor: canvas, minHeight: 'calc(100vh - 56px)' }}>
       <div className="flex items-end justify-between border-b pb-4" style={{ borderColor: colors.rule }}>
         <div>
-          <div className="text-[10px] uppercase tracking-[0.2em] mb-2" style={{ color: colors.muted, fontFamily: 'Söhne, sans-serif' }}>
+          <div className="text-[10px] uppercase tracking-[0.2em] mb-2" style={{ color: colors.muted }}>
             BBVA CIB · Iberia portfolio · Q1 2026
           </div>
-          <h1 className="text-4xl leading-none" style={{ fontFamily: '"Tiempos Headline", Georgia, serif', color: colors.ink, fontWeight: 500 }}>
+          <h1 className="text-4xl leading-none" style={{ color: colors.ink, fontWeight: 600, letterSpacing: '-0.015em' }}>
             CBAM portfolio cockpit
           </h1>
-          <div className="mt-2 text-sm" style={{ color: colors.muted, fontFamily: 'Söhne, sans-serif' }}>
+          <div className="mt-2 text-sm" style={{ color: colors.muted }}>
             {clients.length} corporate client{clients.length === 1 ? '' : 's'} · {clients.reduce((s, c) => s + c.imports.length, 0)} import lines · Powered by Carbon·Edge
           </div>
         </div>
-        <div className="flex items-center gap-3 text-xs" style={{ fontFamily: 'Söhne, sans-serif' }}>
+        <div className="flex items-center gap-3 text-xs">
           <div className="flex items-center gap-2">
             <span style={{ color: colors.muted }}>ETS σ:</span>
             <input
@@ -123,16 +123,32 @@ export function RMView() {
           <button
             type="button"
             onClick={downloadPortfolioFile}
-            className="px-3 py-2 border flex items-center gap-1.5 hover:bg-stone-100"
-            style={{ borderColor: colors.rule, color: colors.ink }}
+            className="px-3 py-2 flex items-center gap-1.5 transition-colors"
+            style={{
+              border: `1px solid ${colors.rule}`,
+              backgroundColor: '#fff',
+              color: colors.ink,
+              borderRadius: '999px',
+              fontWeight: 500,
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = colors.panelHover)}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#fff')}
           >
             <Download className="w-3 h-3" /> Export portfolio
           </button>
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="px-3 py-2 border flex items-center gap-1.5 hover:bg-stone-100"
-            style={{ borderColor: colors.rule, color: colors.ink }}
+            className="px-3 py-2 flex items-center gap-1.5 transition-colors"
+            style={{
+              border: `1px solid ${colors.rule}`,
+              backgroundColor: '#fff',
+              color: colors.ink,
+              borderRadius: '999px',
+              fontWeight: 500,
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = colors.panelHover)}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#fff')}
           >
             <Upload className="w-3 h-3" /> Import portfolio
           </button>
@@ -146,45 +162,57 @@ export function RMView() {
         </div>
       </div>
 
-      <div className="grid grid-cols-5 gap-px" style={{ backgroundColor: colors.rule }}>
-        <div className="p-5 bg-white">
-          <Stat label="Portfolio CBAM 2026" value={formatEUR(portfolioTotals.totalCost2026)} sublabel="Phase-in 2.5%" intense />
-        </div>
-        <div className="p-5 bg-white">
-          <Stat label="Portfolio CBAM 2030" value={formatEUR(portfolioTotals.totalCost2030)} sublabel="Phase-in 48.5%" trend="up" intense />
-        </div>
-        <div className="p-5 bg-white">
-          <Stat label="Portfolio CBAM 2034" value={formatEUR(portfolioTotals.totalCost2034)} sublabel="Full phase-in" trend="up" intense />
-        </div>
-        <div className="p-5 bg-white">
-          <Stat label="High-risk clients" value={portfolioTotals.highRisk} sublabel="Need RM action this Q" intense />
-        </div>
-        <div className="p-5" style={{ backgroundColor: '#0F2847', color: colors.paper }}>
-          <div className="text-[10px] uppercase tracking-[0.18em] font-medium mb-1" style={{ color: '#A4B3C8', fontFamily: 'Söhne, sans-serif' }}>
-            Cross-sell opportunity
-          </div>
-          <div className="text-3xl leading-none tabular-nums" style={{ fontFamily: '"Tiempos Headline", Georgia, serif', color: colors.paper, fontWeight: 500 }}>
-            {formatEUR(portfolioTotals.crossSellOpportunity)}
-          </div>
-          <div className="text-xs mt-1" style={{ color: colors.accent }}>
-            <Target className="w-3 h-3 inline mr-1" />Sustainable financing addressable
-          </div>
-        </div>
+      <div className="grid grid-cols-5 gap-3">
+        <KpiCard
+          icon={<Briefcase className="w-3.5 h-3.5" />}
+          iconColor="blue"
+          label="Portfolio CBAM 2026"
+          value={formatEUR(portfolioTotals.totalCost2026)}
+          sublabel="Phase-in 2.5%"
+        />
+        <KpiCard
+          icon={<TrendingUp className="w-3.5 h-3.5" />}
+          iconColor="orange"
+          label="Portfolio CBAM 2030"
+          value={formatEUR(portfolioTotals.totalCost2030)}
+          sublabel="Phase-in 48.5%"
+        />
+        <KpiCard
+          icon={<Target className="w-3.5 h-3.5" />}
+          iconColor="red"
+          label="Portfolio CBAM 2034"
+          value={formatEUR(portfolioTotals.totalCost2034)}
+          sublabel="Full phase-in"
+        />
+        <KpiCard
+          icon={<AlertTriangle className="w-3.5 h-3.5" />}
+          iconColor="purple"
+          label="High-risk clients"
+          value={String(portfolioTotals.highRisk)}
+          sublabel="Need RM action this Q"
+        />
+        <KpiCard
+          icon={<Sparkles className="w-3.5 h-3.5" />}
+          iconColor="green"
+          label="Cross-sell opportunity"
+          value={formatEUR(portfolioTotals.crossSellOpportunity)}
+          sublabel="Sustainable financing addressable"
+        />
       </div>
 
       <div className="grid grid-cols-3 gap-6">
         <Card className="col-span-2 p-6" accent>
-          <div className="text-[10px] uppercase tracking-[0.2em] mb-1" style={{ color: colors.muted, fontFamily: 'Söhne, sans-serif' }}>
+          <div className="text-[10px] uppercase tracking-[0.2em] mb-1" style={{ color: colors.muted }}>
             Concentration view
           </div>
-          <h2 className="text-2xl mb-4" style={{ fontFamily: '"Tiempos Headline", Georgia, serif', color: colors.ink, fontWeight: 500 }}>
+          <h2 className="text-2xl mb-4" style={{ color: colors.ink, fontWeight: 600, letterSpacing: '-0.015em' }}>
             Portfolio exposure by sector · 2030
           </h2>
           <ResponsiveContainer width="100%" height={260}>
             <BarChart data={sectorAggregation} layout="vertical" margin={{ left: 20 }}>
               <CartesianGrid stroke={colors.rule} strokeDasharray="0" horizontal={false} />
-              <XAxis type="number" stroke={colors.muted} tickFormatter={(v) => `€${(v / 1000).toFixed(0)}k`} style={{ fontSize: '11px', fontFamily: 'Söhne, sans-serif' }} />
-              <YAxis type="category" dataKey="sector" stroke={colors.muted} width={100} style={{ fontSize: '11px', fontFamily: 'Söhne, sans-serif' }} />
+              <XAxis type="number" stroke={colors.muted} tickFormatter={(v) => `€${(v / 1000).toFixed(0)}k`} style={{ fontSize: '11px' }} />
+              <YAxis type="category" dataKey="sector" stroke={colors.muted} width={100} style={{ fontSize: '11px' }} />
               <Tooltip
                 contentStyle={{ backgroundColor: colors.ink, border: 'none', color: colors.paper, fontSize: '12px' }}
                 formatter={(v) => formatEUR(v)}
@@ -195,32 +223,32 @@ export function RMView() {
         </Card>
 
         <Card className="p-6">
-          <div className="text-[10px] uppercase tracking-[0.2em] mb-1" style={{ color: colors.muted, fontFamily: 'Söhne, sans-serif' }}>
+          <div className="text-[10px] uppercase tracking-[0.2em] mb-1" style={{ color: colors.muted }}>
             Priority actions
           </div>
-          <h2 className="text-xl mb-4" style={{ fontFamily: '"Tiempos Headline", Georgia, serif', color: colors.ink, fontWeight: 500 }}>
+          <h2 className="text-xl mb-4" style={{ color: colors.ink, fontWeight: 600, letterSpacing: '-0.015em' }}>
             This week
           </h2>
           <div className="space-y-3">
             <div className="border-l-2 pl-3 py-1" style={{ borderColor: colors.alert }}>
-              <div className="text-[10px] uppercase tracking-wider" style={{ color: colors.alert, fontFamily: 'Söhne, sans-serif' }}>Critical</div>
-              <div className="text-sm" style={{ color: colors.ink, fontFamily: 'Söhne, sans-serif' }}>2 clients still using default values for &gt;60% of imports</div>
-              <div className="text-xs mt-0.5" style={{ color: colors.muted, fontFamily: 'Söhne, sans-serif' }}>+€340k extra CBAM cost in 2030</div>
+              <div className="text-[10px] uppercase tracking-wider" style={{ color: colors.alert }}>Critical</div>
+              <div className="text-sm" style={{ color: colors.ink }}>2 clients still using default values for &gt;60% of imports</div>
+              <div className="text-xs mt-0.5" style={{ color: colors.muted }}>+€340k extra CBAM cost in 2030</div>
             </div>
             <div className="border-l-2 pl-3 py-1" style={{ borderColor: colors.warn }}>
-              <div className="text-[10px] uppercase tracking-wider" style={{ color: colors.warn, fontFamily: 'Söhne, sans-serif' }}>High</div>
-              <div className="text-sm" style={{ color: colors.ink, fontFamily: 'Söhne, sans-serif' }}>Cementos Ibéricos · SLL renewal due in Q2</div>
-              <div className="text-xs mt-0.5" style={{ color: colors.muted, fontFamily: 'Söhne, sans-serif' }}>Embed CBAM-linked KPIs in margin ratchet</div>
+              <div className="text-[10px] uppercase tracking-wider" style={{ color: colors.warn }}>High</div>
+              <div className="text-sm" style={{ color: colors.ink }}>Cementos Ibéricos · SLL renewal due in Q2</div>
+              <div className="text-xs mt-0.5" style={{ color: colors.muted }}>Embed CBAM-linked KPIs in margin ratchet</div>
             </div>
             <div className="border-l-2 pl-3 py-1" style={{ borderColor: colors.accent }}>
-              <div className="text-[10px] uppercase tracking-wider" style={{ color: colors.accentDark, fontFamily: 'Söhne, sans-serif' }}>Opportunity</div>
-              <div className="text-sm" style={{ color: colors.ink, fontFamily: 'Söhne, sans-serif' }}>AluTech: working capital line for cert. purchase</div>
-              <div className="text-xs mt-0.5" style={{ color: colors.muted, fontFamily: 'Söhne, sans-serif' }}>Est. ticket €420k · pricing E + 90 bps</div>
+              <div className="text-[10px] uppercase tracking-wider" style={{ color: colors.accentDark }}>Opportunity</div>
+              <div className="text-sm" style={{ color: colors.ink }}>AluTech: working capital line for cert. purchase</div>
+              <div className="text-xs mt-0.5" style={{ color: colors.muted }}>Est. ticket €420k · pricing E + 90 bps</div>
             </div>
             <div className="border-l-2 pl-3 py-1" style={{ borderColor: colors.steel }}>
-              <div className="text-[10px] uppercase tracking-wider" style={{ color: colors.steel, fontFamily: 'Söhne, sans-serif' }}>Strategic</div>
-              <div className="text-sm" style={{ color: colors.ink, fontFamily: 'Söhne, sans-serif' }}>Q1 2026 delegated acts: third-country carbon price credit</div>
-              <div className="text-xs mt-0.5" style={{ color: colors.muted, fontFamily: 'Söhne, sans-serif' }}>Brief clients with KR/CN imports</div>
+              <div className="text-[10px] uppercase tracking-wider" style={{ color: colors.steel }}>Strategic</div>
+              <div className="text-sm" style={{ color: colors.ink }}>Q1 2026 delegated acts: third-country carbon price credit</div>
+              <div className="text-xs mt-0.5" style={{ color: colors.muted }}>Brief clients with KR/CN imports</div>
             </div>
           </div>
         </Card>
@@ -228,14 +256,14 @@ export function RMView() {
 
       <Card className="overflow-hidden">
         <div className="px-6 py-4 border-b" style={{ borderColor: colors.rule }}>
-          <div className="text-[10px] uppercase tracking-[0.2em] mb-1" style={{ color: colors.muted, fontFamily: 'Söhne, sans-serif' }}>
+          <div className="text-[10px] uppercase tracking-[0.2em] mb-1" style={{ color: colors.muted }}>
             Client portfolio
           </div>
-          <h2 className="text-xl" style={{ fontFamily: '"Tiempos Headline", Georgia, serif', color: colors.ink, fontWeight: 500 }}>
+          <h2 className="text-xl" style={{ color: colors.ink, fontWeight: 600, letterSpacing: '-0.015em' }}>
             CBAM exposure by client · ranked
           </h2>
         </div>
-        <table className="w-full text-sm" style={{ fontFamily: 'Söhne, sans-serif' }}>
+        <table className="w-full text-sm">
           <thead>
             <tr style={{ backgroundColor: colors.cream }}>
               <th className="text-left px-6 py-2.5 text-[10px] uppercase tracking-wider font-medium" style={{ color: colors.muted }}>Client</th>
@@ -298,36 +326,36 @@ export function RMView() {
           const c = portfolioData.find(x => x.id === selectedClient);
           if (!c) return null;
           return (
-            <div className="border-t-2 px-6 py-5" style={{ borderColor: colors.ink, backgroundColor: '#FCFAF5' }}>
+            <div className="border-t px-6 py-5" style={{ borderColor: colors.rule, backgroundColor: colors.panelHover }}>
               <div className="grid grid-cols-3 gap-6">
                 <div>
-                  <div className="text-[10px] uppercase tracking-[0.2em] mb-2" style={{ color: colors.muted, fontFamily: 'Söhne, sans-serif' }}>
+                  <div className="text-[10px] uppercase tracking-[0.2em] mb-2" style={{ color: colors.muted }}>
                     Recommended action
                   </div>
-                  <div className="text-lg leading-tight mb-2" style={{ fontFamily: '"Tiempos Headline", Georgia, serif', color: colors.ink, fontWeight: 500 }}>
+                  <div className="text-lg leading-tight mb-2" style={{ color: colors.ink, fontWeight: 600, letterSpacing: '-0.015em' }}>
                     Initiate Sustainability-Linked Loan refinancing
                   </div>
-                  <div className="text-xs leading-relaxed" style={{ color: colors.muted, fontFamily: 'Söhne, sans-serif' }}>
+                  <div className="text-xs leading-relaxed" style={{ color: colors.muted }}>
                     Embed CBAM-aligned KPI: reduction in weighted-average embedded EF (tCO₂e per tonne imported) of ≥15% by FY2028.
                     Margin step-down of 25 bps on achievement; step-up of 15 bps on miss.
                   </div>
                 </div>
                 <div>
-                  <div className="text-[10px] uppercase tracking-[0.2em] mb-2" style={{ color: colors.muted, fontFamily: 'Söhne, sans-serif' }}>
+                  <div className="text-[10px] uppercase tracking-[0.2em] mb-2" style={{ color: colors.muted }}>
                     Indicative ticket
                   </div>
-                  <div className="text-3xl tabular-nums mb-1" style={{ fontFamily: '"Tiempos Headline", Georgia, serif', color: colors.ink, fontWeight: 500 }}>
+                  <div className="text-3xl tabular-nums mb-1" style={{ color: colors.ink, fontWeight: 600, letterSpacing: '-0.015em' }}>
                     {formatEUR(c.cost2030 * 1.5)}
                   </div>
-                  <div className="text-xs" style={{ color: colors.muted, fontFamily: 'Söhne, sans-serif' }}>
+                  <div className="text-xs" style={{ color: colors.muted }}>
                     ~1.5x peak CBAM exposure · 5-year tenor
                   </div>
                 </div>
                 <div>
-                  <div className="text-[10px] uppercase tracking-[0.2em] mb-2" style={{ color: colors.muted, fontFamily: 'Söhne, sans-serif' }}>
+                  <div className="text-[10px] uppercase tracking-[0.2em] mb-2" style={{ color: colors.muted }}>
                     Bank P&L impact (5y)
                   </div>
-                  <div className="space-y-1.5 text-sm" style={{ fontFamily: 'Söhne, sans-serif' }}>
+                  <div className="space-y-1.5 text-sm">
                     <div className="flex justify-between"><span style={{ color: colors.muted }}>Net interest income</span><span className="tabular-nums" style={{ color: colors.ink }}>{formatEUR(c.cost2030 * 1.5 * 0.022 * 5)}</span></div>
                     <div className="flex justify-between"><span style={{ color: colors.muted }}>Fees (advisory + verification)</span><span className="tabular-nums" style={{ color: colors.ink }}>{formatEUR(c.cost2030 * 0.015)}</span></div>
                     <div className="flex justify-between border-t pt-1.5 mt-1.5" style={{ borderColor: colors.rule }}>
@@ -338,19 +366,45 @@ export function RMView() {
                     </div>
                   </div>
                 </div>
-                <div className="col-span-3 flex gap-3 pt-2 border-t" style={{ borderColor: colors.rule }}>
+                <div className="col-span-3 flex gap-2 pt-2 border-t" style={{ borderColor: colors.rule }}>
                   <button
                     type="button"
                     onClick={() => setTermSheetClient(c)}
-                    className="px-4 py-2 text-xs flex items-center gap-2 hover:opacity-90"
-                    style={{ backgroundColor: colors.ink, color: colors.paper, fontFamily: 'Söhne, sans-serif' }}
+                    className="px-4 py-2 text-xs flex items-center gap-2 transition-colors"
+                    style={{
+                      backgroundColor: colors.ink,
+                      color: '#fff',
+                      borderRadius: '999px',
+                      fontWeight: 500,
+                      boxShadow: '0 1px 2px rgba(11,13,18,0.10)',
+                    }}
                   >
                     <Zap className="w-3 h-3" /> Generate term sheet
                   </button>
-                  <button type="button" className="px-4 py-2 text-xs border" style={{ borderColor: colors.ink, color: colors.ink, fontFamily: 'Söhne, sans-serif' }}>
+                  <button
+                    type="button"
+                    className="px-4 py-2 text-xs"
+                    style={{
+                      border: `1px solid ${colors.rule}`,
+                      backgroundColor: '#fff',
+                      color: colors.ink,
+                      borderRadius: '999px',
+                      fontWeight: 500,
+                    }}
+                  >
                     Open client view
                   </button>
-                  <button type="button" className="px-4 py-2 text-xs border" style={{ borderColor: colors.rule, color: colors.muted, fontFamily: 'Söhne, sans-serif' }}>
+                  <button
+                    type="button"
+                    className="px-4 py-2 text-xs"
+                    style={{
+                      border: `1px solid ${colors.rule}`,
+                      backgroundColor: '#fff',
+                      color: colors.muted,
+                      borderRadius: '999px',
+                      fontWeight: 500,
+                    }}
+                  >
                     Send brief to client
                   </button>
                 </div>
@@ -362,30 +416,30 @@ export function RMView() {
 
       <Card className="p-6 grid grid-cols-3 gap-6" accent>
         <div className="col-span-2">
-          <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] mb-1" style={{ color: colors.accentDark, fontFamily: 'Söhne, sans-serif' }}>
+          <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] mb-1" style={{ color: colors.accentDark }}>
             <Shield className="w-3 h-3" /> Pillar 2 transition risk · BBVA capital insight
           </div>
-          <h2 className="text-2xl mb-3" style={{ fontFamily: '"Tiempos Headline", Georgia, serif', color: colors.ink, fontWeight: 500 }}>
+          <h2 className="text-2xl mb-3" style={{ color: colors.ink, fontWeight: 600, letterSpacing: '-0.015em' }}>
             Each €1M of CBAM exposure your clients absorb shifts your transition-risk weighting
           </h2>
-          <p className="text-sm leading-relaxed" style={{ color: colors.muted, fontFamily: 'Söhne, sans-serif' }}>
+          <p className="text-sm leading-relaxed" style={{ color: colors.muted }}>
             Across this portfolio, the projected 2030 CBAM cost burden of {formatEUR(portfolioTotals.totalCost2030)} sits in obligors with limited verified emissions data ({Math.round(portfolioTotals.avgVerification * 100)}% portfolio average).
             Under the ECB&apos;s climate stress test framework, this concentration translates into an estimated +18 bps add-on to the implied transition-risk capital requirement on this book.
             Active financing of supplier decarbonisation and verification programmes can reduce this add-on by 6–10 bps over a 24-month window.
           </p>
         </div>
         <div className="border-l pl-6" style={{ borderColor: colors.rule }}>
-          <div className="text-[10px] uppercase tracking-[0.2em] mb-2" style={{ color: colors.muted, fontFamily: 'Söhne, sans-serif' }}>
+          <div className="text-[10px] uppercase tracking-[0.2em] mb-2" style={{ color: colors.muted }}>
             Impact on this book
           </div>
           <div className="space-y-3">
             <div>
-              <div className="text-2xl tabular-nums" style={{ fontFamily: '"Tiempos Headline", Georgia, serif', color: colors.ink, fontWeight: 500 }}>+18 bps</div>
-              <div className="text-xs" style={{ color: colors.muted, fontFamily: 'Söhne, sans-serif' }}>Current transition add-on</div>
+              <div className="text-2xl tabular-nums" style={{ color: colors.ink, fontWeight: 600, letterSpacing: '-0.015em' }}>+18 bps</div>
+              <div className="text-xs" style={{ color: colors.muted }}>Current transition add-on</div>
             </div>
             <div>
-              <div className="text-2xl tabular-nums" style={{ fontFamily: '"Tiempos Headline", Georgia, serif', color: colors.accentDark, fontWeight: 500 }}>−8 bps</div>
-              <div className="text-xs" style={{ color: colors.muted, fontFamily: 'Söhne, sans-serif' }}>Achievable in 24 months</div>
+              <div className="text-2xl tabular-nums" style={{ color: colors.accent, fontWeight: 600, letterSpacing: '-0.015em' }}>−8 bps</div>
+              <div className="text-xs" style={{ color: colors.muted }}>Achievable in 24 months</div>
             </div>
           </div>
         </div>

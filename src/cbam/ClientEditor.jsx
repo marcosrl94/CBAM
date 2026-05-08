@@ -58,14 +58,14 @@ export function ClientEditor({ mode, client, onSave, onCancel }) {
     >
       <div
         className="w-full max-w-[560px]"
-        style={{ backgroundColor: colors.paper, fontFamily: 'Söhne, sans-serif', boxShadow: '0 30px 80px rgba(10, 22, 40, 0.45)' }}
+        style={{ backgroundColor: colors.paper, boxShadow: '0 24px 60px rgba(11, 13, 18, 0.18)', borderRadius: '12px', border: `1px solid ${colors.rule}` }}
       >
         <header className="flex items-start justify-between px-6 py-4 border-b" style={{ borderColor: colors.rule }}>
           <div>
             <div className="text-[10px] uppercase tracking-[0.22em]" style={{ color: colors.muted }}>
               Corporate client
             </div>
-            <h2 className="text-xl mt-0.5" style={{ fontFamily: '"Tiempos Headline", Georgia, serif', color: colors.ink, fontWeight: 500 }}>
+            <h2 className="text-xl mt-0.5" style={{ color: colors.ink, fontWeight: 600, letterSpacing: '-0.015em' }}>
               {mode === 'edit' ? 'Edit client metadata' : 'New corporate client'}
             </h2>
           </div>
@@ -178,7 +178,6 @@ const INPUT_STYLE = {
   borderBottom: `1px solid ${colors.rule}`,
   background: 'transparent',
   color: colors.ink,
-  fontFamily: 'Söhne, sans-serif',
   fontSize: '14px',
   outline: 'none',
 };

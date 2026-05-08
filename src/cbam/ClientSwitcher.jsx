@@ -60,7 +60,7 @@ export function ClientSwitcher({ onCreate, onEdit }) {
   if (!selected) return null;
 
   return (
-    <div ref={ref} className="relative" style={{ fontFamily: 'Söhne, sans-serif' }}>
+    <div ref={ref} className="relative">
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
@@ -82,7 +82,7 @@ export function ClientSwitcher({ onCreate, onEdit }) {
       {open && (
         <div
           className="absolute left-0 top-full mt-2 z-30 border shadow-lg"
-          style={{ backgroundColor: colors.paper, borderColor: colors.rule, minWidth: 360, boxShadow: '0 12px 40px rgba(10, 22, 40, 0.18)' }}
+          style={{ backgroundColor: '#fff', border: `1px solid ${colors.rule}`, borderRadius: '10px', minWidth: 360, boxShadow: '0 8px 24px rgba(11, 13, 18, 0.12)' }}
           role="menu"
         >
           <button

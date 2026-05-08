@@ -107,8 +107,8 @@ export function TermSheet({ client, deal: dealOverride, mcVol = 0.22, onClose })
       <style>{PRINT_CSS}</style>
 
       {/* Toolbar — hidden when printing */}
-      <div className="ts-toolbar" style={{ backgroundColor: colors.ink, color: colors.paper, fontFamily: 'Söhne, sans-serif' }}>
-        <div className="text-[10px] uppercase tracking-[0.2em]" style={{ color: '#A4B3C8' }}>
+      <div className="ts-toolbar" style={{ backgroundColor: colors.ink, color: '#fff' }}>
+        <div className="text-[10px] uppercase tracking-[0.14em]" style={{ color: '#9b9ea7', fontWeight: 500 }}>
           Indicative term sheet · {reference}
         </div>
         <div className="flex items-center gap-2">
@@ -116,15 +116,15 @@ export function TermSheet({ client, deal: dealOverride, mcVol = 0.22, onClose })
             type="button"
             onClick={() => window.print()}
             className="px-3 py-1.5 text-xs flex items-center gap-1.5"
-            style={{ backgroundColor: colors.accent, color: colors.ink, fontWeight: 600 }}
+            style={{ backgroundColor: '#fff', color: colors.ink, fontWeight: 600, borderRadius: '999px' }}
           >
             <Printer className="w-3 h-3" /> Print / Save as PDF
           </button>
           <button
             type="button"
             onClick={onClose}
-            className="px-3 py-1.5 text-xs flex items-center gap-1.5 border"
-            style={{ borderColor: '#3A4D6B', color: colors.paper }}
+            className="px-3 py-1.5 text-xs flex items-center gap-1.5"
+            style={{ border: '1px solid rgba(255,255,255,0.3)', color: '#fff', borderRadius: '999px' }}
           >
             <X className="w-3 h-3" /> Close
           </button>
@@ -132,20 +132,20 @@ export function TermSheet({ client, deal: dealOverride, mcVol = 0.22, onClose })
       </div>
 
       {/* Document */}
-      <div className="ts-doc-wrap" style={{ backgroundColor: '#E8E3D6' }}>
+      <div className="ts-doc-wrap" style={{ backgroundColor: '#f4f4f6' }}>
         <article className="ts-doc" style={{ backgroundColor: colors.paper, color: colors.ink }}>
 
           {/* Letterhead */}
           <header className="ts-letterhead" style={{ borderColor: colors.ink }}>
             <div>
-              <div className="text-2xl tracking-tight" style={{ fontFamily: '"Tiempos Headline", Georgia, serif', fontWeight: 500 }}>
+              <div className="text-2xl tracking-tight" style={{ fontWeight: 700, letterSpacing: '-0.02em' }}>
                 Carbon<span style={{ color: colors.accent }}>·</span>Edge
               </div>
-              <div className="text-[10px] uppercase tracking-[0.22em] mt-0.5" style={{ color: colors.muted, fontFamily: 'Söhne, sans-serif' }}>
+              <div className="text-[10px] uppercase tracking-[0.22em] mt-0.5" style={{ color: colors.muted }}>
                 BBVA CIB · Sustainable Finance Solutions
               </div>
             </div>
-            <div className="text-right text-[10px] uppercase tracking-[0.2em]" style={{ color: colors.muted, fontFamily: 'Söhne, sans-serif' }}>
+            <div className="text-right text-[10px] uppercase tracking-[0.2em]" style={{ color: colors.muted }}>
               <div>Strictly private &amp; confidential</div>
               <div className="mt-1">Indicative · non-binding</div>
             </div>
@@ -153,13 +153,13 @@ export function TermSheet({ client, deal: dealOverride, mcVol = 0.22, onClose })
 
           {/* Title block */}
           <section className="ts-title">
-            <div className="text-[10px] uppercase tracking-[0.22em]" style={{ color: colors.muted, fontFamily: 'Söhne, sans-serif' }}>
+            <div className="text-[10px] uppercase tracking-[0.22em]" style={{ color: colors.muted }}>
               {deal.facility}
             </div>
-            <h1 className="ts-h1" style={{ fontFamily: '"Tiempos Headline", Georgia, serif' }}>
+            <h1 className="ts-h1" style={{ fontWeight: 700, letterSpacing: '-0.02em' }}>
               Indicative term sheet
             </h1>
-            <div className="ts-meta" style={{ fontFamily: 'Söhne, sans-serif', color: colors.muted }}>
+            <div className="ts-meta" style={{ color: colors.muted }}>
               <span>Reference {reference}</span>
               <span aria-hidden="true">·</span>
               <span>Issued {formatHumanDate(today)}</span>
@@ -204,7 +204,7 @@ export function TermSheet({ client, deal: dealOverride, mcVol = 0.22, onClose })
             ]} />
 
             <div className="ts-ratchet">
-              <table className="ts-table" style={{ fontFamily: 'Söhne, sans-serif' }}>
+              <table className="ts-table">
                 <thead>
                   <tr>
                     <th>Scenario</th>
@@ -244,7 +244,7 @@ export function TermSheet({ client, deal: dealOverride, mcVol = 0.22, onClose })
                   </tr>
                 </tbody>
               </table>
-              <div className="ts-note" style={{ color: colors.muted, fontFamily: 'Söhne, sans-serif' }}>
+              <div className="ts-note" style={{ color: colors.muted }}>
                 Annual interest cost shown over reference rate only, full drawdown assumed, for illustration.
               </div>
             </div>
@@ -265,7 +265,7 @@ export function TermSheet({ client, deal: dealOverride, mcVol = 0.22, onClose })
 
           {/* CBAM context */}
           <Block title="5 · CBAM linkage rationale">
-            <p className="ts-para" style={{ fontFamily: '"Tiempos Headline", Georgia, serif', color: colors.ink }}>
+            <p className="ts-para" style={{ color: colors.ink }}>
               The KPI is materially aligned with the Borrower&apos;s exposure under the EU Carbon Border Adjustment
               Mechanism. Reducing the weighted-average embedded emission factor of CBAM-scope imports translates
               one-for-one into a reduction of certificate-surrender obligations from 2027 onwards, and progressively
@@ -277,7 +277,7 @@ export function TermSheet({ client, deal: dealOverride, mcVol = 0.22, onClose })
               <ExposureCell label="CBAM cost · 2034" value={formatEUR(exposure.cost2034)} note="Phase-in 100%" />
             </div>
 
-            <p className="ts-para" style={{ fontFamily: '"Tiempos Headline", Georgia, serif', color: colors.ink, marginTop: 18 }}>
+            <p className="ts-para" style={{ color: colors.ink, marginTop: 18 }}>
               Working capital sizing — the Reg. 2023/956 Art. 22(2) 50% quarterly holding rule (active from
               Q2 2027) and the 30 September annual surrender produce the following projected peak certificate
               working-capital outstanding under the central ETS path, with P10–P90 bounds from a Monte Carlo
@@ -305,7 +305,7 @@ export function TermSheet({ client, deal: dealOverride, mcVol = 0.22, onClose })
               <MixCell title="Sector mix (by tonnage)" entries={exposure.sectorMix} />
               <MixCell title="Origin mix (by tonnage)" entries={exposure.originMix} />
             </div>
-            <div className="ts-note" style={{ color: colors.muted, fontFamily: 'Söhne, sans-serif' }}>
+            <div className="ts-note" style={{ color: colors.muted }}>
               Verified-emissions coverage at signing: {Math.round(exposure.verifiedShare * 100)}% of imported tonnage.
               Increasing coverage to ≥80% within 18 months of signing is a documentation undertaking under §6.
             </div>
@@ -313,7 +313,7 @@ export function TermSheet({ client, deal: dealOverride, mcVol = 0.22, onClose })
 
           {/* CPs and undertakings */}
           <Block title="6 · Conditions precedent &amp; sustainability undertakings">
-            <ol className="ts-list" style={{ fontFamily: '"Tiempos Headline", Georgia, serif', color: colors.ink }}>
+            <ol className="ts-list" style={{ color: colors.ink }}>
               <li>Customary CPs for an investment-grade unsecured facility (corporate authorisations, KYC, legal opinion, no MAC, accuracy of representations).</li>
               <li>Delivery of the CBAM declarant authorisation issued by the competent national authority pursuant to Reg. (EU) 2023/956 Art. 5.</li>
               <li>Baseline KPI report covering calendar year 2025 imports, prepared in line with the CBAM methodology and subject to limited assurance.</li>
@@ -338,33 +338,33 @@ export function TermSheet({ client, deal: dealOverride, mcVol = 0.22, onClose })
           {/* Signatures */}
           <section className="ts-sig">
             <div className="ts-sig-block">
-              <div className="text-[10px] uppercase tracking-[0.22em]" style={{ color: colors.muted, fontFamily: 'Söhne, sans-serif' }}>
+              <div className="text-[10px] uppercase tracking-[0.22em]" style={{ color: colors.muted }}>
                 For and on behalf of the Lender
               </div>
               <div className="ts-sig-line" />
-              <div className="text-xs" style={{ color: colors.ink, fontFamily: 'Söhne, sans-serif' }}>
+              <div className="text-xs" style={{ color: colors.ink }}>
                 Banco Bilbao Vizcaya Argentaria, S.A.
               </div>
-              <div className="text-[11px]" style={{ color: colors.muted, fontFamily: 'Söhne, sans-serif' }}>
+              <div className="text-[11px]" style={{ color: colors.muted }}>
                 Name · Title · Date
               </div>
             </div>
             <div className="ts-sig-block">
-              <div className="text-[10px] uppercase tracking-[0.22em]" style={{ color: colors.muted, fontFamily: 'Söhne, sans-serif' }}>
+              <div className="text-[10px] uppercase tracking-[0.22em]" style={{ color: colors.muted }}>
                 For and on behalf of the Borrower
               </div>
               <div className="ts-sig-line" />
-              <div className="text-xs" style={{ color: colors.ink, fontFamily: 'Söhne, sans-serif' }}>
+              <div className="text-xs" style={{ color: colors.ink }}>
                 {client.name}
               </div>
-              <div className="text-[11px]" style={{ color: colors.muted, fontFamily: 'Söhne, sans-serif' }}>
+              <div className="text-[11px]" style={{ color: colors.muted }}>
                 Name · Title · Date
               </div>
             </div>
           </section>
 
           {/* Disclaimer */}
-          <footer className="ts-disclaimer" style={{ borderColor: colors.rule, color: colors.muted, fontFamily: 'Söhne, sans-serif' }}>
+          <footer className="ts-disclaimer" style={{ borderColor: colors.rule, color: colors.muted }}>
             This indicative term sheet has been prepared by BBVA CIB Sustainable Finance Solutions for discussion
             purposes only. It is non-binding, subject to internal credit and sustainability-finance approvals,
             customary due diligence, satisfactory documentation and market conditions. Pricing references are
@@ -388,7 +388,7 @@ export function TermSheet({ client, deal: dealOverride, mcVol = 0.22, onClose })
 function Block({ title, children }) {
   return (
     <section className="ts-block">
-      <h2 className="ts-h2" style={{ fontFamily: '"Tiempos Headline", Georgia, serif', borderColor: colors.ink }}>
+      <h2 className="ts-h2" style={{ borderColor: colors.ink }}>
         {title}
       </h2>
       <div className="ts-block-body">{children}</div>
@@ -401,8 +401,8 @@ function KeyValueGrid({ rows }) {
     <dl className="ts-kv">
       {rows.map(([k, v]) => (
         <div key={k} className="ts-kv-row" style={{ borderColor: colors.rule }}>
-          <dt style={{ color: colors.muted, fontFamily: 'Söhne, sans-serif' }}>{k}</dt>
-          <dd style={{ color: colors.ink, fontFamily: 'Söhne, sans-serif' }}>{v}</dd>
+          <dt style={{ color: colors.muted }}>{k}</dt>
+          <dd style={{ color: colors.ink }}>{v}</dd>
         </div>
       ))}
     </dl>
@@ -412,13 +412,13 @@ function KeyValueGrid({ rows }) {
 function ExposureCell({ label, value, note }) {
   return (
     <div className="ts-exposure" style={{ borderColor: colors.rule, backgroundColor: '#FCFAF5' }}>
-      <div className="text-[10px] uppercase tracking-[0.2em]" style={{ color: colors.muted, fontFamily: 'Söhne, sans-serif' }}>
+      <div className="text-[10px] uppercase tracking-[0.2em]" style={{ color: colors.muted }}>
         {label}
       </div>
-      <div className="text-2xl tabular-nums mt-1" style={{ fontFamily: '"Tiempos Headline", Georgia, serif', color: colors.ink, fontWeight: 500 }}>
+      <div className="text-2xl tabular-nums mt-1" style={{ color: colors.ink, fontWeight: 500 }}>
         {value}
       </div>
-      <div className="text-[11px] mt-0.5" style={{ color: colors.muted, fontFamily: 'Söhne, sans-serif' }}>{note}</div>
+      <div className="text-[11px] mt-0.5" style={{ color: colors.muted }}>{note}</div>
     </div>
   );
 }
@@ -427,12 +427,12 @@ function MixCell({ title, entries }) {
   const total = entries.reduce((s, e) => s + e.tonnes, 0);
   return (
     <div className="ts-mix">
-      <div className="text-[10px] uppercase tracking-[0.2em] mb-2" style={{ color: colors.muted, fontFamily: 'Söhne, sans-serif' }}>
+      <div className="text-[10px] uppercase tracking-[0.2em] mb-2" style={{ color: colors.muted }}>
         {title}
       </div>
       <div className="space-y-1.5">
         {entries.map(e => (
-          <div key={e.label} className="flex items-center justify-between text-xs" style={{ fontFamily: 'Söhne, sans-serif' }}>
+          <div key={e.label} className="flex items-center justify-between text-xs">
             <span style={{ color: colors.ink }}>{e.label}</span>
             <span className="tabular-nums" style={{ color: colors.muted }}>
               {e.tonnes.toLocaleString('es-ES')} t · {Math.round((e.tonnes / Math.max(1, total)) * 100)}%
@@ -485,7 +485,7 @@ const PRINT_CSS = `
   .ts-overlay {
     position: fixed; inset: 0; z-index: 50;
     display: flex; flex-direction: column;
-    background: rgba(10, 22, 40, 0.55);
+    background: rgba(11, 13, 18, 0.45);
   }
   .ts-toolbar {
     display: flex; align-items: center; justify-content: space-between;
@@ -501,24 +501,26 @@ const PRINT_CSS = `
     width: 100%;
     max-width: 880px;
     padding: 56px 64px 72px;
-    box-shadow: 0 30px 80px rgba(10, 22, 40, 0.35);
+    box-shadow: 0 24px 60px rgba(11, 13, 18, 0.18);
     line-height: 1.5;
+    border-radius: 4px;
   }
   .ts-letterhead {
     display: flex; align-items: flex-end; justify-content: space-between;
     padding-bottom: 14px;
-    border-bottom: 1.5px solid #0A1628;
+    border-bottom: 1.5px solid #0b0d12;
     margin-bottom: 28px;
   }
   .ts-title { margin-bottom: 32px; }
   .ts-h1 {
-    font-size: 38px; font-weight: 500; line-height: 1.05;
+    font-size: 38px; font-weight: 700; line-height: 1.05;
+    letter-spacing: -0.025em;
     margin: 6px 0 12px;
   }
   .ts-meta { display: flex; flex-wrap: wrap; gap: 0.5rem; font-size: 11px; }
   .ts-block { margin-bottom: 26px; page-break-inside: avoid; }
   .ts-h2 {
-    font-size: 14px; font-weight: 500; letter-spacing: 0.02em;
+    font-size: 13px; font-weight: 600; letter-spacing: 0.04em;
     text-transform: uppercase;
     border-bottom: 1px solid;
     padding-bottom: 6px; margin-bottom: 14px;
@@ -532,8 +534,8 @@ const PRINT_CSS = `
   }
   .ts-kv-row:first-child { border-top: none; }
   .ts-kv-row dt {
-    font-size: 10px; text-transform: uppercase; letter-spacing: 0.18em;
-    padding-top: 1px;
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.14em;
+    padding-top: 1px; font-weight: 500;
   }
   .ts-kv-row dd { margin: 0; line-height: 1.55; }
   .ts-ratchet { margin-top: 18px; }
@@ -542,13 +544,13 @@ const PRINT_CSS = `
   }
   .ts-table th, .ts-table td {
     text-align: left; padding: 8px 10px;
-    border-bottom: 1px solid #D9D2C4;
+    border-bottom: 1px solid #e7e7eb;
   }
   .ts-table th {
-    text-transform: uppercase; letter-spacing: 0.14em; font-size: 10px;
-    color: #6B7280; font-weight: 500;
-    background: #F1ECE2;
-    border-bottom: 1.5px solid #0A1628;
+    text-transform: uppercase; letter-spacing: 0.12em; font-size: 10px;
+    color: #6e7280; font-weight: 500;
+    background: #fafafb;
+    border-bottom: 1.5px solid #0b0d12;
   }
   .ts-table .text-right { text-align: right; }
   .ts-note { font-size: 11px; margin-top: 8px; }
@@ -565,8 +567,7 @@ const PRINT_CSS = `
   .ts-list li::before {
     content: counter(ts) ".";
     position: absolute; left: 0; top: 0;
-    font-family: "Tiempos Headline", Georgia, serif;
-    color: #0EA5A4; font-weight: 600;
+    color: #3b6cf3; font-weight: 600;
   }
   .ts-grid-3 {
     display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
@@ -576,14 +577,14 @@ const PRINT_CSS = `
     display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px;
     margin-top: 16px;
   }
-  .ts-exposure { padding: 14px 16px; border: 1px solid; }
+  .ts-exposure { padding: 14px 16px; border: 1px solid; border-radius: 6px; }
   .ts-mix {}
   .ts-sig {
     display: grid; grid-template-columns: 1fr 1fr; gap: 40px;
     margin-top: 40px; page-break-inside: avoid;
   }
   .ts-sig-line {
-    border-bottom: 1px solid #0A1628;
+    border-bottom: 1px solid #0b0d12;
     height: 38px; margin: 6px 0 8px;
   }
   .ts-disclaimer {
@@ -593,12 +594,11 @@ const PRINT_CSS = `
   }
   @media print {
     body { background: white !important; }
-    /* Hide everything except the portaled overlay and its descendants. */
     body > *:not(.ts-overlay) { display: none !important; }
     .ts-overlay { position: static; background: white; }
     .ts-toolbar { display: none !important; }
     .ts-doc-wrap { padding: 0; background: white !important; overflow: visible; }
-    .ts-doc { box-shadow: none; max-width: none; padding: 12mm 14mm; }
+    .ts-doc { box-shadow: none; max-width: none; padding: 12mm 14mm; border-radius: 0; }
     @page { size: A4; margin: 0; }
   }
 `;

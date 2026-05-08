@@ -27,19 +27,19 @@ export function DataSourcesPanel() {
   );
 
   return (
-    <div className="border" style={{ borderColor: colors.rule, backgroundColor: colors.cream }}>
+    <div style={{ border: `1px solid ${colors.rule}`, backgroundColor: colors.cream, borderRadius: '10px', overflow: 'hidden' }}>
       <div className="px-6 py-3 border-b flex items-center justify-between" style={{ borderColor: colors.rule }}>
         <div className="flex items-center gap-2">
           <Database className="w-3.5 h-3.5" style={{ color: colors.muted }} />
-          <div className="text-[10px] uppercase tracking-[0.2em]" style={{ color: colors.muted, fontFamily: 'Söhne, sans-serif' }}>
+          <div className="text-[10px] uppercase tracking-[0.2em]" style={{ color: colors.muted }}>
             Data sources &amp; provenance
           </div>
         </div>
-        <div className="text-[11px]" style={{ color: colors.muted, fontFamily: 'Söhne, sans-serif' }}>
+        <div className="text-[11px]" style={{ color: colors.muted }}>
           Engine inputs — live, snapshot, or fixed by regulation
         </div>
       </div>
-      <table className="w-full text-xs" style={{ fontFamily: 'Söhne, sans-serif' }}>
+      <table className="w-full text-xs">
         <thead>
           <tr>
             <th className="text-left px-6 py-2 text-[10px] uppercase tracking-wider font-medium" style={{ color: colors.muted }}>Input</th>

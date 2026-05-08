@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { ArrowRight, Plus, Trash2, Pencil, Info, Leaf, Wallet } from 'lucide-react';
+import { ArrowRight, Plus, Trash2, Pencil, Info, Leaf, Wallet, TrendingUp, Target } from 'lucide-react';
 import {
   XAxis,
   YAxis,
@@ -23,9 +23,9 @@ import {
   getEffectiveEF,
   lookupCNDefault,
 } from './cbamEngine.js';
-import { colors, chartSeriesFills } from './theme.js';
+import { colors, chartSeriesFills, canvas } from './theme.js';
 import { formatEUR } from './format.js';
-import { Card, Stat, Pill } from './ui.jsx';
+import { Card, Pill, KpiCard } from './ui.jsx';
 import { TermSheet } from './TermSheet.jsx';
 import { useFX } from './feeds/fxFeed.js';
 import { DataSourcesPanel } from './DataSourcesPanel.jsx';
@@ -205,14 +205,14 @@ export function ClientView() {
 
   if (!selectedClient) {
     return (
-      <div className="px-8 py-12 text-center" style={{ backgroundColor: colors.paper, minHeight: 'calc(100vh - 73px)', fontFamily: 'Söhne, sans-serif', color: colors.muted }}>
+      <div className="px-8 py-12 text-center" style={{ backgroundColor: canvas, minHeight: 'calc(100vh - 56px)', color: colors.muted }}>
         No clients in the portfolio. Create one from the BBVA RM view, or refresh.
       </div>
     );
   }
 
   return (
-    <div className="px-8 py-6 space-y-6" style={{ backgroundColor: colors.paper, minHeight: 'calc(100vh - 73px)' }}>
+    <div className="px-8 py-6 space-y-6" style={{ backgroundColor: canvas, minHeight: 'calc(100vh - 56px)' }}>
       <div className="flex items-end justify-between border-b pb-4" style={{ borderColor: colors.rule }}>
         <div>
           <div className="mb-2">
@@ -221,10 +221,10 @@ export function ClientView() {
               onEdit={() => setClientEditor({ mode: 'edit', client: selectedClient })}
             />
           </div>
-          <h1 className="text-4xl leading-none" style={{ fontFamily: '"Tiempos Headline", Georgia, serif', color: colors.ink, fontWeight: 500 }}>
+          <h1 className="text-4xl leading-none" style={{ color: colors.ink, fontWeight: 600, letterSpacing: '-0.015em' }}>
             Your CBAM exposure
           </h1>
-          <div className="mt-2 text-sm" style={{ color: colors.muted, fontFamily: 'Söhne, sans-serif' }}>
+          <div className="mt-2 text-sm" style={{ color: colors.muted }}>
             Definitive period · First surrender deadline 30 Sept 2027 · {imports.length} import line{imports.length === 1 ? '' : 's'} tracked
           </div>
         </div>
@@ -235,64 +235,59 @@ export function ClientView() {
         </div>
       </div>
 
-      <div className="grid grid-cols-4 gap-px" style={{ backgroundColor: colors.rule }}>
-        <div className="p-5 bg-white">
-          <Stat
-            label="2026 Cost (forecast)"
-            value={formatEUR(totals.cost2026)}
-            sublabel={`Phase-in 2.5% · ETS €${ETS_PRICE_PATH[2026].toFixed(0)}/t (anchored to spot)`}
-            intense
-          />
-        </div>
-        <div className="p-5 bg-white">
-          <Stat
-            label="2030 Cost"
-            value={formatEUR(totals.cost2030)}
-            sublabel={`Phase-in 48.5% · P10–P90 ${formatEUR(mc.costPercentiles.find(p => p.year === 2030)?.p10 ?? totals.cost2030)} – ${formatEUR(mc.costPercentiles.find(p => p.year === 2030)?.p90 ?? totals.cost2030)}`}
-            trend="up"
-            intense
-          />
-        </div>
-        <div className="p-5 bg-white">
-          <Stat
-            label="2034 Cost (full phase-in)"
-            value={formatEUR(totals.cost2034)}
-            sublabel={`Phase-in 100% · P10–P90 ${formatEUR(mc.costPercentiles.find(p => p.year === 2034)?.p10 ?? totals.cost2034)} – ${formatEUR(mc.costPercentiles.find(p => p.year === 2034)?.p90 ?? totals.cost2034)}`}
-            trend="up"
-            intense
-          />
-        </div>
-        <div className="p-5 bg-white" style={{ backgroundColor: colors.cream }}>
-          <Stat
-            label="Verification savings"
-            value={formatEUR(totals.verificationSavings)}
-            sublabel={`vs. all-defaults baseline · ${forecastYear}`}
-            trend="down"
-            intense
-          />
-        </div>
+      <div className="grid grid-cols-4 gap-3">
+        <KpiCard
+          icon={<Wallet className="w-3.5 h-3.5" />}
+          iconColor="blue"
+          label="2026 Cost (forecast)"
+          value={formatEUR(totals.cost2026)}
+          sublabel={`Phase-in 2.5% · ETS €${ETS_PRICE_PATH[2026].toFixed(0)}/t (spot)`}
+        />
+        <KpiCard
+          icon={<TrendingUp className="w-3.5 h-3.5" />}
+          iconColor="orange"
+          label="2030 Cost"
+          value={formatEUR(totals.cost2030)}
+          sublabel={`P10–P90 ${formatEUR(mc.costPercentiles.find(p => p.year === 2030)?.p10 ?? totals.cost2030)} – ${formatEUR(mc.costPercentiles.find(p => p.year === 2030)?.p90 ?? totals.cost2030)}`}
+        />
+        <KpiCard
+          icon={<Target className="w-3.5 h-3.5" />}
+          iconColor="red"
+          label="2034 Cost (full phase-in)"
+          value={formatEUR(totals.cost2034)}
+          sublabel={`P10–P90 ${formatEUR(mc.costPercentiles.find(p => p.year === 2034)?.p10 ?? totals.cost2034)} – ${formatEUR(mc.costPercentiles.find(p => p.year === 2034)?.p90 ?? totals.cost2034)}`}
+        />
+        <KpiCard
+          icon={<Leaf className="w-3.5 h-3.5" />}
+          iconColor="green"
+          label="Verification savings"
+          value={formatEUR(totals.verificationSavings)}
+          sublabel={`vs. all-defaults baseline · ${forecastYear}`}
+        />
       </div>
 
       <div className="grid grid-cols-3 gap-6">
         <Card className="col-span-2 p-6" accent>
           <div className="flex items-start justify-between mb-4">
             <div>
-              <div className="text-[10px] uppercase tracking-[0.2em] mb-1" style={{ color: colors.muted, fontFamily: 'Söhne, sans-serif' }}>
+              <div className="text-[10px] uppercase tracking-[0.2em] mb-1" style={{ color: colors.muted }}>
                 Long-term exposure path
               </div>
-              <h2 className="text-2xl" style={{ fontFamily: '"Tiempos Headline", Georgia, serif', color: colors.ink, fontWeight: 500 }}>
+              <h2 className="text-2xl" style={{ color: colors.ink, fontWeight: 600, letterSpacing: '-0.015em' }}>
                 Annual CBAM cost · 2026 — 2034
               </h2>
             </div>
-            <div className="flex items-center gap-2 text-xs" style={{ fontFamily: 'Söhne, sans-serif', color: colors.muted }}>
+            <div className="flex items-center gap-2 text-xs" style={{ color: colors.muted }}>
               <button
                 type="button"
                 onClick={() => setUseActuals(!useActuals)}
-                className="px-3 py-1 border transition-colors"
+                className="px-3 py-1.5 transition-colors"
                 style={{
-                  borderColor: useActuals ? colors.accent : colors.rule,
-                  backgroundColor: useActuals ? '#E0F4F3' : 'transparent',
-                  color: useActuals ? colors.accentDark : colors.muted,
+                  border: `1px solid ${useActuals ? colors.accent : colors.rule}`,
+                  backgroundColor: useActuals ? colors.accentBg : '#fff',
+                  color: useActuals ? colors.accent : colors.muted,
+                  borderRadius: '999px',
+                  fontWeight: useActuals ? 600 : 500,
                 }}
               >
                 {useActuals ? '✓ ' : ''}Use verified actuals where available
@@ -308,14 +303,14 @@ export function ClientView() {
                 </linearGradient>
               </defs>
               <CartesianGrid stroke={colors.rule} strokeDasharray="0" vertical={false} />
-              <XAxis dataKey="year" stroke={colors.muted} style={{ fontSize: '11px', fontFamily: 'Söhne, sans-serif' }} />
+              <XAxis dataKey="year" stroke={colors.muted} style={{ fontSize: '11px' }} />
               <YAxis
                 stroke={colors.muted}
                 tickFormatter={(v) => `€${(v / 1000).toFixed(0)}k`}
-                style={{ fontSize: '11px', fontFamily: 'Söhne, sans-serif' }}
+                style={{ fontSize: '11px' }}
               />
               <Tooltip
-                contentStyle={{ backgroundColor: colors.ink, border: 'none', borderRadius: 0, color: colors.paper, fontFamily: 'Söhne, sans-serif', fontSize: '12px' }}
+                contentStyle={{ backgroundColor: colors.ink, border: 'none', borderRadius: 0, color: colors.paper, fontSize: '12px' }}
                 formatter={(v, name) => {
                   const labels = { cost: 'P50 · current data mix', costDefaults: 'All defaults', band: 'P10 — P90 (ETS price uncertainty)' };
                   if (Array.isArray(v)) {
@@ -329,7 +324,7 @@ export function ClientView() {
               <Area type="monotone" dataKey="cost" stroke={colors.accent} strokeWidth={2.5} fill="url(#costGrad)" name="cost" />
             </AreaChart>
           </ResponsiveContainer>
-          <div className="mt-3 flex items-center gap-6 text-xs flex-wrap" style={{ color: colors.muted, fontFamily: 'Söhne, sans-serif' }}>
+          <div className="mt-3 flex items-center gap-6 text-xs flex-wrap" style={{ color: colors.muted }}>
             <span className="flex items-center gap-2"><span className="inline-block w-3 h-0.5" style={{ backgroundColor: colors.accent }}/>Median (P50) · current data mix</span>
             <span className="flex items-center gap-2"><span className="inline-block w-3 h-2" style={{ backgroundColor: colors.accent, opacity: 0.18 }}/>P10 — P90 band · ETS price uncertainty (σ {Math.round(mc.vol * 100)}%, {mc.trials} trials)</span>
             <span className="flex items-center gap-2"><span className="inline-block w-3 h-0.5 border-t border-dashed" style={{ borderColor: colors.warn }}/>All-defaults reference</span>
@@ -337,23 +332,34 @@ export function ClientView() {
         </Card>
 
         <Card className="p-6">
-          <div className="text-[10px] uppercase tracking-[0.2em] mb-1" style={{ color: colors.muted, fontFamily: 'Söhne, sans-serif' }}>
+          <div className="text-[10px] uppercase tracking-[0.2em] mb-1" style={{ color: colors.muted }}>
             Cost composition
           </div>
-          <h2 className="text-xl mb-4" style={{ fontFamily: '"Tiempos Headline", Georgia, serif', color: colors.ink, fontWeight: 500 }}>
+          <h2 className="text-xl mb-4" style={{ color: colors.ink, fontWeight: 600, letterSpacing: '-0.015em' }}>
             By sector · {forecastYear}
           </h2>
-          <div className="flex items-center gap-2 mb-4 text-xs" style={{ fontFamily: 'Söhne, sans-serif' }}>
+          <div
+            className="inline-flex items-center mb-4 text-xs"
+            style={{
+              border: `1px solid ${colors.rule}`,
+              borderRadius: '999px',
+              backgroundColor: colors.panelHover,
+              padding: 2,
+            }}
+          >
             {[2026, 2030, 2034].map(y => (
               <button
                 key={y}
                 type="button"
                 onClick={() => setForecastYear(y)}
-                className="px-2 py-1 border transition-colors"
+                className="px-3 py-1 transition-colors"
                 style={{
-                  borderColor: forecastYear === y ? colors.ink : colors.rule,
-                  backgroundColor: forecastYear === y ? colors.ink : 'transparent',
-                  color: forecastYear === y ? colors.paper : colors.muted,
+                  borderRadius: '999px',
+                  backgroundColor: forecastYear === y ? '#fff' : 'transparent',
+                  color: forecastYear === y ? colors.ink : colors.muted,
+                  fontWeight: forecastYear === y ? 600 : 500,
+                  boxShadow: forecastYear === y ? '0 1px 2px rgba(11,13,18,0.06)' : 'none',
+                  border: forecastYear === y ? `1px solid ${colors.rule}` : '1px solid transparent',
                 }}
               >
                 {y}
@@ -370,7 +376,7 @@ export function ClientView() {
               <Tooltip formatter={(v) => formatEUR(v)} contentStyle={{ backgroundColor: colors.ink, border: 'none', color: colors.paper, fontSize: '12px' }} />
             </PieChart>
           </ResponsiveContainer>
-          <div className="space-y-1.5 text-xs mt-2" style={{ fontFamily: 'Söhne, sans-serif' }}>
+          <div className="space-y-1.5 text-xs mt-2">
             {sectorBreakdown.map((s, i) => (
               <div key={s.sector} className="flex items-center justify-between">
                 <span className="flex items-center gap-2" style={{ color: colors.ink }}>
@@ -387,66 +393,82 @@ export function ClientView() {
       <Card className="p-6" accent>
         <div className="flex items-start justify-between mb-5">
           <div>
-            <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] mb-1" style={{ color: colors.accentDark, fontFamily: 'Söhne, sans-serif' }}>
+            <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] mb-1" style={{ color: colors.accentDark }}>
               <Wallet className="w-3 h-3" /> Working capital cockpit
             </div>
-            <h2 className="text-2xl" style={{ fontFamily: '"Tiempos Headline", Georgia, serif', color: colors.ink, fontWeight: 500 }}>
+            <h2 className="text-2xl" style={{ color: colors.ink, fontWeight: 600, letterSpacing: '-0.015em' }}>
               Quarterly certificate cash flow · 2026 — 2034
             </h2>
-            <div className="text-xs mt-1" style={{ color: colors.muted, fontFamily: 'Söhne, sans-serif' }}>
+            <div className="text-xs mt-1" style={{ color: colors.muted }}>
               Models the Reg. 2023/956 Art. 22(2) 50% quarterly holding rule (active Q2 2027) and the 30 Sept annual surrender. Certificates priced at the prevailing ETS quarter, consumed FIFO at surrender.
             </div>
           </div>
           <div className="grid grid-cols-3 gap-6 text-right">
             <div>
-              <div className="text-[10px] uppercase tracking-[0.18em]" style={{ color: colors.muted, fontFamily: 'Söhne, sans-serif' }}>
+              <div className="text-[10px] uppercase tracking-[0.18em]" style={{ color: colors.muted }}>
                 Peak working capital
               </div>
-              <div className="text-2xl tabular-nums" style={{ fontFamily: '"Tiempos Headline", Georgia, serif', color: colors.ink, fontWeight: 500 }}>
+              <div className="text-2xl tabular-nums" style={{ color: colors.ink, fontWeight: 600, letterSpacing: '-0.015em' }}>
                 {formatEUR(cashflow.totals.peakWorkingCapitalEUR)}
               </div>
-              <div className="text-[11px]" style={{ color: colors.muted, fontFamily: 'Söhne, sans-serif' }}>
+              <div className="text-[11px]" style={{ color: colors.muted }}>
                 {cashflow.totals.peakPeriod ?? '—'} · P10–P90 {formatEUR(mc.peakWCPercentiles.p10)} – {formatEUR(mc.peakWCPercentiles.p90)}
               </div>
             </div>
             <div>
-              <div className="text-[10px] uppercase tracking-[0.18em]" style={{ color: colors.muted, fontFamily: 'Söhne, sans-serif' }}>
+              <div className="text-[10px] uppercase tracking-[0.18em]" style={{ color: colors.muted }}>
                 Cumulative cert outflow
               </div>
-              <div className="text-2xl tabular-nums" style={{ fontFamily: '"Tiempos Headline", Georgia, serif', color: colors.ink, fontWeight: 500 }}>
+              <div className="text-2xl tabular-nums" style={{ color: colors.ink, fontWeight: 600, letterSpacing: '-0.015em' }}>
                 {formatEUR(cashflow.totals.totalOutflowEUR)}
               </div>
-              <div className="text-[11px]" style={{ color: colors.muted, fontFamily: 'Söhne, sans-serif' }}>2026 — 2034</div>
+              <div className="text-[11px]" style={{ color: colors.muted }}>2026 — 2034</div>
             </div>
             <div>
-              <div className="text-[10px] uppercase tracking-[0.18em]" style={{ color: colors.muted, fontFamily: 'Söhne, sans-serif' }}>
+              <div className="text-[10px] uppercase tracking-[0.18em]" style={{ color: colors.muted }}>
                 First surrender
               </div>
-              <div className="text-2xl tabular-nums" style={{ fontFamily: '"Tiempos Headline", Georgia, serif', color: colors.ink, fontWeight: 500 }}>
+              <div className="text-2xl tabular-nums" style={{ color: colors.ink, fontWeight: 600, letterSpacing: '-0.015em' }}>
                 2027Q3
               </div>
-              <div className="text-[11px]" style={{ color: colors.muted, fontFamily: 'Söhne, sans-serif' }}>30 Sept 2027 · for 2026 imports</div>
+              <div className="text-[11px]" style={{ color: colors.muted }}>30 Sept 2027 · for 2026 imports</div>
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-x-4 gap-y-2 mb-4 text-xs flex-wrap" style={{ fontFamily: 'Söhne, sans-serif' }}>
+        <div className="flex items-center gap-x-4 gap-y-2 mb-4 text-xs flex-wrap">
           <div className="flex items-center gap-2">
             <span style={{ color: colors.muted }}>Quarterly import seasonality:</span>
-            {Object.entries(QUARTERLY_PRESETS).map(([key, preset]) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setSeasonality(key)}
-                className="px-2.5 py-1 border transition-colors"
-                style={{
-                  borderColor: seasonality === key ? colors.ink : colors.rule,
-                  backgroundColor: seasonality === key ? colors.ink : 'transparent',
-                  color: seasonality === key ? colors.paper : colors.muted,
-                }}
-              >
-                {preset.label} · {preset.mix.map(m => `${Math.round(m * 100)}`).join('/')}
-              </button>
-            ))}
+            <div
+              className="inline-flex items-center"
+              style={{
+                border: `1px solid ${colors.rule}`,
+                borderRadius: '999px',
+                backgroundColor: colors.panelHover,
+                padding: 2,
+              }}
+            >
+              {Object.entries(QUARTERLY_PRESETS).map(([key, preset]) => {
+                const active = seasonality === key;
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setSeasonality(key)}
+                    className="px-2.5 py-1 transition-colors"
+                    style={{
+                      borderRadius: '999px',
+                      backgroundColor: active ? '#fff' : 'transparent',
+                      color: active ? colors.ink : colors.muted,
+                      fontWeight: active ? 600 : 500,
+                      boxShadow: active ? '0 1px 2px rgba(11,13,18,0.06)' : 'none',
+                      border: active ? `1px solid ${colors.rule}` : '1px solid transparent',
+                    }}
+                  >
+                    {preset.label} · {preset.mix.map(m => `${Math.round(m * 100)}`).join('/')}
+                  </button>
+                );
+              })}
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <span style={{ color: colors.muted }}>ETS volatility σ:</span>
@@ -478,16 +500,16 @@ export function ClientView() {
               dataKey="period"
               stroke={colors.muted}
               interval={3}
-              style={{ fontSize: '10px', fontFamily: 'Söhne, sans-serif' }}
+              style={{ fontSize: '10px' }}
             />
             <YAxis
               yAxisId="left"
               stroke={colors.muted}
               tickFormatter={(v) => `€${(v / 1000).toFixed(0)}k`}
-              style={{ fontSize: '10px', fontFamily: 'Söhne, sans-serif' }}
+              style={{ fontSize: '10px' }}
             />
             <Tooltip
-              contentStyle={{ backgroundColor: colors.ink, border: 'none', borderRadius: 0, color: colors.paper, fontFamily: 'Söhne, sans-serif', fontSize: '11px' }}
+              contentStyle={{ backgroundColor: colors.ink, border: 'none', borderRadius: 0, color: colors.paper, fontSize: '11px' }}
               formatter={(v, name) => {
                 const labels = {
                   workingCapitalEUR: 'P50 working capital',
@@ -523,7 +545,7 @@ export function ClientView() {
             <Area yAxisId="left" type="monotone" dataKey="workingCapitalEUR" stroke={colors.accent} strokeWidth={2.5} fill="url(#wcGrad)" name="workingCapitalEUR" />
           </ComposedChart>
         </ResponsiveContainer>
-        <div className="mt-3 flex items-center gap-6 text-xs flex-wrap" style={{ color: colors.muted, fontFamily: 'Söhne, sans-serif' }}>
+        <div className="mt-3 flex items-center gap-6 text-xs flex-wrap" style={{ color: colors.muted }}>
           <span className="flex items-center gap-2"><span className="inline-block w-3 h-0.5" style={{ backgroundColor: colors.accent }}/>P50 working capital (held cert lots @ acquisition cost)</span>
           <span className="flex items-center gap-2"><span className="inline-block w-3 h-2" style={{ backgroundColor: colors.accent, opacity: 0.18 }}/>P10 — P90 band · ETS price uncertainty</span>
           <span className="flex items-center gap-2"><span className="inline-block w-3 h-2" style={{ backgroundColor: colors.steel, opacity: 0.55 }}/>Cert purchase outflow (quarter)</span>
@@ -534,23 +556,31 @@ export function ClientView() {
       <Card className="overflow-hidden">
         <div className="px-6 py-4 border-b flex items-center justify-between" style={{ borderColor: colors.rule }}>
           <div>
-            <div className="text-[10px] uppercase tracking-[0.2em] mb-1" style={{ color: colors.muted, fontFamily: 'Söhne, sans-serif' }}>
+            <div className="text-[10px] uppercase tracking-[0.2em] mb-1" style={{ color: colors.muted }}>
               Inventory
             </div>
-            <h2 className="text-xl" style={{ fontFamily: '"Tiempos Headline", Georgia, serif', color: colors.ink, fontWeight: 500 }}>
+            <h2 className="text-xl" style={{ color: colors.ink, fontWeight: 600, letterSpacing: '-0.015em' }}>
               Import lines tracked
             </h2>
           </div>
           <button
             type="button"
             onClick={() => setEditor({ mode: 'add' })}
-            className="text-xs px-3 py-2 flex items-center gap-1.5 border hover:bg-stone-100"
-            style={{ borderColor: colors.ink, color: colors.ink, fontFamily: 'Söhne, sans-serif' }}
+            className="text-xs px-3 py-2 flex items-center gap-1.5 transition-colors"
+            style={{
+              backgroundColor: colors.ink,
+              color: '#fff',
+              borderRadius: '999px',
+              fontWeight: 500,
+              boxShadow: '0 1px 2px rgba(11,13,18,0.10)',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = colors.navy)}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = colors.ink)}
           >
             <Plus className="w-3 h-3" /> Add import line
           </button>
         </div>
-        <table className="w-full text-sm" style={{ fontFamily: 'Söhne, sans-serif' }}>
+        <table className="w-full text-sm">
           <thead>
             <tr style={{ backgroundColor: colors.cream }}>
               <th className="text-left px-6 py-2.5 text-[10px] uppercase tracking-wider font-medium" style={{ color: colors.muted }}>Sector</th>
@@ -640,10 +670,10 @@ export function ClientView() {
       <Card className="p-6" accent>
         <div className="flex items-start justify-between mb-5">
           <div>
-            <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] mb-1" style={{ color: colors.accentDark, fontFamily: 'Söhne, sans-serif' }}>
+            <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] mb-1" style={{ color: colors.accentDark }}>
               <Leaf className="w-3 h-3" /> BBVA Green Financing Engine
             </div>
-            <h2 className="text-2xl" style={{ fontFamily: '"Tiempos Headline", Georgia, serif', color: colors.ink, fontWeight: 500 }}>
+            <h2 className="text-2xl" style={{ color: colors.ink, fontWeight: 600, letterSpacing: '-0.015em' }}>
               Tailored to your CBAM profile
             </h2>
           </div>
@@ -651,33 +681,50 @@ export function ClientView() {
         </div>
         <div className="grid grid-cols-2 gap-4">
           {financingRecs.map((r, idx) => (
-            <div key={idx} className="border p-5 hover:shadow-md transition-shadow cursor-pointer group" style={{ borderColor: colors.rule, backgroundColor: 'white' }}>
+            <div
+              key={idx}
+              className="p-5 transition-shadow cursor-pointer group"
+              style={{
+                border: `1px solid ${colors.rule}`,
+                backgroundColor: '#fff',
+                borderRadius: '10px',
+                boxShadow: '0 1px 2px rgba(11,13,18,0.04)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(11,13,18,0.08)';
+                e.currentTarget.style.borderColor = colors.mutedSoft;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.boxShadow = '0 1px 2px rgba(11,13,18,0.04)';
+                e.currentTarget.style.borderColor = colors.rule;
+              }}
+            >
               <div className="flex items-start justify-between mb-3">
                 <div>
-                  <div className="text-[10px] uppercase tracking-[0.18em] mb-1" style={{ color: colors.muted, fontFamily: 'Söhne, sans-serif' }}>
+                  <div className="text-[10px] uppercase tracking-[0.18em] mb-1" style={{ color: colors.muted }}>
                     {r.priority === 'high' ? '★ High match' : r.priority === 'medium' ? 'Medium match' : 'Strategic'}
                   </div>
-                  <div className="text-lg" style={{ fontFamily: '"Tiempos Headline", Georgia, serif', color: colors.ink, fontWeight: 500 }}>
+                  <div className="text-lg" style={{ color: colors.ink, fontWeight: 600, letterSpacing: '-0.015em' }}>
                     {r.product}
                   </div>
                 </div>
                 <ArrowRight className="w-4 h-4 mt-1 opacity-30 group-hover:opacity-100 group-hover:translate-x-1 transition-all" style={{ color: colors.accent }} />
               </div>
-              <div className="text-xs leading-relaxed mb-3" style={{ color: colors.muted, fontFamily: 'Söhne, sans-serif' }}>
+              <div className="text-xs leading-relaxed mb-3" style={{ color: colors.muted }}>
                 {r.feature}
               </div>
               <div className="border-t pt-3 flex items-center justify-between" style={{ borderColor: colors.rule }}>
                 <div>
-                  <div className="text-[10px] uppercase tracking-wider" style={{ color: colors.muted, fontFamily: 'Söhne, sans-serif' }}>
+                  <div className="text-[10px] uppercase tracking-wider" style={{ color: colors.muted }}>
                     Indicative size
                   </div>
-                  <div className="text-base tabular-nums" style={{ color: colors.ink, fontFamily: '"Tiempos Headline", Georgia, serif', fontWeight: 500 }}>
+                  <div className="text-base tabular-nums" style={{ color: colors.ink, fontWeight: 600, letterSpacing: '-0.01em' }}>
                     {formatEUR(r.amount)}
                   </div>
                 </div>
                 <div className="text-right max-w-[60%]">
-                  <div className="text-[10px] uppercase tracking-wider" style={{ color: colors.muted, fontFamily: 'Söhne, sans-serif' }}>Why this</div>
-                  <div className="text-[11px] leading-tight" style={{ color: colors.ink, fontFamily: 'Söhne, sans-serif' }}>{r.why}</div>
+                  <div className="text-[10px] uppercase tracking-wider" style={{ color: colors.muted }}>Why this</div>
+                  <div className="text-[11px] leading-tight" style={{ color: colors.ink }}>{r.why}</div>
                 </div>
               </div>
             </div>
@@ -685,14 +732,20 @@ export function ClientView() {
         </div>
         {financingRecs.some(r => r.product === 'Sustainability-Linked Loan') && (
           <div className="mt-5 pt-4 border-t flex items-center justify-between" style={{ borderColor: colors.rule }}>
-            <div className="text-xs" style={{ color: colors.muted, fontFamily: 'Söhne, sans-serif' }}>
+            <div className="text-xs" style={{ color: colors.muted }}>
               Preview the indicative term sheet for the headline Sustainability-Linked Loan match.
             </div>
             <button
               type="button"
               onClick={() => setTermSheetOpen(true)}
-              className="px-4 py-2 text-xs flex items-center gap-2 hover:opacity-90"
-              style={{ backgroundColor: colors.ink, color: colors.paper, fontFamily: 'Söhne, sans-serif' }}
+              className="px-4 py-2 text-xs flex items-center gap-2 transition-colors"
+              style={{
+                backgroundColor: colors.ink,
+                color: '#fff',
+                borderRadius: '999px',
+                fontWeight: 500,
+                boxShadow: '0 1px 2px rgba(11,13,18,0.10)',
+              }}
             >
               View indicative term sheet <ArrowRight className="w-3 h-3" />
             </button>
@@ -702,7 +755,7 @@ export function ClientView() {
 
       <Card className="p-5 flex items-start gap-4" >
         <Info className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: colors.muted }} />
-        <div className="text-xs leading-relaxed" style={{ color: colors.muted, fontFamily: 'Söhne, sans-serif' }}>
+        <div className="text-xs leading-relaxed" style={{ color: colors.muted }}>
           <strong style={{ color: colors.ink }}>Methodology · </strong>
           Calculations apply CBAM Regulation 2023/956 as amended by Omnibus Regulation 2025/2083 and implementing acts of 17 Dec 2025. Default emission factors are routed through CN-code lookup (Annex IV) with sector-level fallback; +30% markup applies from 2028. Phase-in factors mirror the EU ETS free allocation phase-out schedule. ETS price path anchors 2026 to the latest EUA spot snapshot; outer years use analyst-consensus (illustrative). USD→EUR conversion is fetched live from Frankfurter (ECB reference rates) with snapshot fallback. First certificate surrender obligation: 30 September 2027 for 2026 imports. From Q2 2027, declarants must hold certificates covering at least 50% of cumulative embedded emissions by quarter-end.
         </div>
