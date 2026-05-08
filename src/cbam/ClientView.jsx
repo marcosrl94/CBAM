@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { ArrowRight, Plus, Trash2, Info, Leaf, Wallet } from 'lucide-react';
+import { ArrowRight, Plus, Trash2, Pencil, Info, Leaf, Wallet } from 'lucide-react';
 import {
   XAxis,
   YAxis,
@@ -21,7 +21,6 @@ import {
   COUNTRY_DEFAULTS,
   calculateCBAMCost,
   getEffectiveEF,
-  SAMPLE_CLIENTS,
   lookupCNDefault,
 } from './cbamEngine.js';
 import { colors, chartSeriesFills } from './theme.js';
@@ -32,15 +31,54 @@ import { useFX } from './feeds/fxFeed.js';
 import { DataSourcesPanel } from './DataSourcesPanel.jsx';
 import { projectCBAMCashflow, QUARTERLY_PRESETS } from './cashflowEngine.js';
 import { runMonteCarlo } from './monteCarloEngine.js';
+import { ImportLineEditor } from './ImportLineEditor.jsx';
+import { ClientEditor } from './ClientEditor.jsx';
+import { ClientSwitcher } from './ClientSwitcher.jsx';
+import {
+  useClientsStore,
+  updateClient,
+  updateClientImports,
+  createClient,
+} from './store/clientsStore.js';
+
+const EMPTY_IMPORTS = [];
 
 export function ClientView() {
-  const [imports, setImports] = useState(SAMPLE_CLIENTS[0].imports);
+  const { clients, selectedId } = useClientsStore();
+  const selectedClient = clients.find(c => c.id === selectedId) ?? clients[0];
+  const imports = selectedClient ? selectedClient.imports : EMPTY_IMPORTS;
+
   const [forecastYear, setForecastYear] = useState(2026);
   const [useActuals, setUseActuals] = useState(true);
   const [termSheetOpen, setTermSheetOpen] = useState(false);
   const [seasonality, setSeasonality] = useState('even');
+  const [editor, setEditor] = useState(null);
+  const [clientEditor, setClientEditor] = useState(null);
   const fx = useFX();
   const quarterlyMix = QUARTERLY_PRESETS[seasonality].mix;
+
+  const setImports = (next) => {
+    if (!selectedClient) return;
+    const value = typeof next === 'function' ? next(selectedClient.imports) : next;
+    updateClientImports(selectedClient.id, value);
+  };
+
+  const handleEditorSave = (line) => {
+    setImports(prev => {
+      const exists = prev.some(i => i.id === line.id);
+      return exists ? prev.map(i => (i.id === line.id ? line : i)) : [...prev, line];
+    });
+    setEditor(null);
+  };
+
+  const handleClientEditorSave = (patch) => {
+    if (clientEditor?.mode === 'add') {
+      createClient({ ...patch, imports: [] });
+    } else if (selectedClient) {
+      updateClient(selectedClient.id, patch);
+    }
+    setClientEditor(null);
+  };
 
   const totals = useMemo(() => {
     const totalTonnes = imports.reduce((s, i) => s + i.tonnes, 0);
@@ -164,18 +202,29 @@ export function ClientView() {
     return recs;
   }, [imports, totals, projectionData, cashflow]);
 
+  if (!selectedClient) {
+    return (
+      <div className="px-8 py-12 text-center" style={{ backgroundColor: colors.paper, minHeight: 'calc(100vh - 73px)', fontFamily: 'Söhne, sans-serif', color: colors.muted }}>
+        No clients in the portfolio. Create one from the BBVA RM view, or refresh.
+      </div>
+    );
+  }
+
   return (
     <div className="px-8 py-6 space-y-6" style={{ backgroundColor: colors.paper, minHeight: 'calc(100vh - 73px)' }}>
       <div className="flex items-end justify-between border-b pb-4" style={{ borderColor: colors.rule }}>
         <div>
-          <div className="text-[10px] uppercase tracking-[0.2em] mb-2" style={{ color: colors.muted, fontFamily: 'Söhne, sans-serif' }}>
-            Aceros del Mediterráneo S.A. · CIF A-08123456
+          <div className="mb-2">
+            <ClientSwitcher
+              onCreate={() => setClientEditor({ mode: 'add' })}
+              onEdit={() => setClientEditor({ mode: 'edit', client: selectedClient })}
+            />
           </div>
           <h1 className="text-4xl leading-none" style={{ fontFamily: '"Tiempos Headline", Georgia, serif', color: colors.ink, fontWeight: 500 }}>
             Your CBAM exposure
           </h1>
           <div className="mt-2 text-sm" style={{ color: colors.muted, fontFamily: 'Söhne, sans-serif' }}>
-            Definitive period · First surrender deadline 30 Sept 2027 · {imports.length} import lines tracked
+            Definitive period · First surrender deadline 30 Sept 2027 · {imports.length} import line{imports.length === 1 ? '' : 's'} tracked
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -475,7 +524,8 @@ export function ClientView() {
           </div>
           <button
             type="button"
-            className="text-xs px-3 py-2 flex items-center gap-1.5 border"
+            onClick={() => setEditor({ mode: 'add' })}
+            className="text-xs px-3 py-2 flex items-center gap-1.5 border hover:bg-stone-100"
             style={{ borderColor: colors.ink, color: colors.ink, fontFamily: 'Söhne, sans-serif' }}
           >
             <Plus className="w-3 h-3" /> Add import line
@@ -528,9 +578,26 @@ export function ClientView() {
                     {i.hasVerification ? <Pill tone="good">Verified</Pill> : <Pill tone="warn">Unverified</Pill>}
                   </td>
                   <td className="px-6 py-3 text-right">
-                    <button type="button" onClick={() => removeImport(i.id)} className="opacity-40 hover:opacity-100">
-                      <Trash2 className="w-3.5 h-3.5" style={{ color: colors.muted }} />
-                    </button>
+                    <div className="inline-flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setEditor({ mode: 'edit', line: i })}
+                        className="opacity-40 hover:opacity-100"
+                        title="Edit"
+                        aria-label="Edit"
+                      >
+                        <Pencil className="w-3.5 h-3.5" style={{ color: colors.muted }} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removeImport(i.id)}
+                        className="opacity-40 hover:opacity-100"
+                        title="Delete"
+                        aria-label="Delete"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" style={{ color: colors.muted }} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               );
@@ -626,8 +693,26 @@ export function ClientView() {
 
       {termSheetOpen && (
         <TermSheet
-          client={{ ...SAMPLE_CLIENTS[0], imports }}
+          client={selectedClient}
           onClose={() => setTermSheetOpen(false)}
+        />
+      )}
+
+      {editor && (
+        <ImportLineEditor
+          mode={editor.mode}
+          line={editor.line}
+          onSave={handleEditorSave}
+          onCancel={() => setEditor(null)}
+        />
+      )}
+
+      {clientEditor && (
+        <ClientEditor
+          mode={clientEditor.mode}
+          client={clientEditor.client}
+          onSave={handleClientEditorSave}
+          onCancel={() => setClientEditor(null)}
         />
       )}
     </div>

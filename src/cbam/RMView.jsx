@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { Filter, FileText, ChevronRight, Target, Zap, Shield } from 'lucide-react';
+import { useState, useMemo, useRef } from 'react';
+import { ChevronRight, Target, Zap, Shield, Download, Upload } from 'lucide-react';
 import {
   BarChart,
   Bar,
@@ -9,7 +9,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import { CBAM_SECTORS, calculateCBAMCost, SAMPLE_CLIENTS } from './cbamEngine.js';
+import { CBAM_SECTORS, calculateCBAMCost } from './cbamEngine.js';
 import { colors } from './theme.js';
 import { formatEUR } from './format.js';
 import { Card, Stat, Pill } from './ui.jsx';
@@ -18,14 +18,27 @@ import { useFX } from './feeds/fxFeed.js';
 import { DataSourcesPanel } from './DataSourcesPanel.jsx';
 import { projectCBAMCashflow } from './cashflowEngine.js';
 import { runMonteCarlo } from './monteCarloEngine.js';
+import { useClientsStore } from './store/clientsStore.js';
+import { downloadPortfolioFile, readAndImportPortfolioFile } from './store/portfolioIO.js';
 
 export function RMView() {
+  const { clients } = useClientsStore();
   const [selectedClient, setSelectedClient] = useState(null);
   const [termSheetClient, setTermSheetClient] = useState(null);
+  const fileInputRef = useRef(null);
   const fx = useFX();
 
+  const handleImportPick = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    const result = await readAndImportPortfolioFile(file);
+    if (result.cancelled) return;
+    if (!result.ok) window.alert(`Import failed: ${result.error}`);
+  };
+
   const portfolioData = useMemo(() => {
-    return SAMPLE_CLIENTS.map(c => {
+    return clients.map(c => {
       const cost2026 = c.imports.reduce((s, i) => s + calculateCBAMCost(i, 2026, true, fx.rate), 0);
       const cost2030 = c.imports.reduce((s, i) => s + calculateCBAMCost(i, 2030, true, fx.rate), 0);
       const cost2034 = c.imports.reduce((s, i) => s + calculateCBAMCost(i, 2034, true, fx.rate), 0);
@@ -43,7 +56,7 @@ export function RMView() {
       if (exposureToRevenue > 0.01 || verifiedShare < 0.2) riskTier = 'high';
       return { ...c, cost2026, cost2030, cost2034, totalTonnes, verifiedShare, exposureToRevenue, riskTier, peakWC, peakWCPeriod, peakWCp10, peakWCp90 };
     });
-  }, [fx.rate]);
+  }, [fx.rate, clients]);
 
   const portfolioTotals = useMemo(() => {
     return {
@@ -58,16 +71,17 @@ export function RMView() {
 
   const sectorAggregation = useMemo(() => {
     const map = {};
-    SAMPLE_CLIENTS.forEach(c => {
+    clients.forEach(c => {
       c.imports.forEach(i => {
-        const sec = CBAM_SECTORS[i.sector].label;
+        const sec = CBAM_SECTORS[i.sector]?.label;
+        if (!sec) return;
         if (!map[sec]) map[sec] = { sector: sec, exposure2030: 0, tonnes: 0 };
         map[sec].exposure2030 += calculateCBAMCost(i, 2030, true, fx.rate);
         map[sec].tonnes += i.tonnes;
       });
     });
     return Object.values(map).sort((a, b) => b.exposure2030 - a.exposure2030);
-  }, [fx.rate]);
+  }, [fx.rate, clients]);
 
   const rankedClients = useMemo(
     () => [...portfolioData].sort((a, b) => b.cost2030 - a.cost2030),
@@ -85,16 +99,33 @@ export function RMView() {
             CBAM portfolio cockpit
           </h1>
           <div className="mt-2 text-sm" style={{ color: colors.muted, fontFamily: 'Söhne, sans-serif' }}>
-            {SAMPLE_CLIENTS.length} corporate clients · {SAMPLE_CLIENTS.reduce((s, c) => s + c.imports.length, 0)} import lines · Powered by Carbon·Edge
+            {clients.length} corporate client{clients.length === 1 ? '' : 's'} · {clients.reduce((s, c) => s + c.imports.length, 0)} import lines · Powered by Carbon·Edge
           </div>
         </div>
         <div className="flex items-center gap-2 text-xs" style={{ fontFamily: 'Söhne, sans-serif' }}>
-          <button type="button" className="px-3 py-2 border flex items-center gap-1.5" style={{ borderColor: colors.rule, color: colors.muted }}>
-            <Filter className="w-3 h-3" /> All sectors
+          <button
+            type="button"
+            onClick={downloadPortfolioFile}
+            className="px-3 py-2 border flex items-center gap-1.5 hover:bg-stone-100"
+            style={{ borderColor: colors.rule, color: colors.ink }}
+          >
+            <Download className="w-3 h-3" /> Export portfolio
           </button>
-          <button type="button" className="px-3 py-2 border flex items-center gap-1.5" style={{ borderColor: colors.rule, color: colors.muted }}>
-            <FileText className="w-3 h-3" /> Export brief
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="px-3 py-2 border flex items-center gap-1.5 hover:bg-stone-100"
+            style={{ borderColor: colors.rule, color: colors.ink }}
+          >
+            <Upload className="w-3 h-3" /> Import portfolio
           </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/json,.json"
+            onChange={handleImportPick}
+            style={{ display: 'none' }}
+          />
         </div>
       </div>
 
