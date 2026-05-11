@@ -1,5 +1,5 @@
-import { useState, useMemo, useRef } from 'react';
-import { ChevronRight, Target, Zap, Shield, Download, Upload, Briefcase, TrendingUp, AlertTriangle, Sparkles } from 'lucide-react';
+import { useState, useMemo, useRef, lazy, Suspense } from 'react';
+import { ChevronRight, Target, Zap, Shield, Download, Upload, Briefcase, TrendingUp, AlertTriangle, Sparkles, Plus, FolderOpen } from 'lucide-react';
 import {
   BarChart,
   Bar,
@@ -13,12 +13,13 @@ import { CBAM_SECTORS, calculateCBAMCost } from './cbamEngine.js';
 import { colors, canvas } from './theme.js';
 import { formatEUR } from './format.js';
 import { Card, Pill, KpiCard } from './ui.jsx';
-import { TermSheet } from './TermSheet.jsx';
+const TermSheet = lazy(() => import('./TermSheet.jsx').then((m) => ({ default: m.TermSheet })));
+const ClientEditor = lazy(() => import('./ClientEditor.jsx').then((m) => ({ default: m.ClientEditor })));
 import { useFX } from './feeds/fxFeed.js';
 import { DataSourcesPanel } from './DataSourcesPanel.jsx';
 import { projectCBAMCashflow } from './cashflowEngine.js';
 import { runMonteCarlo } from './monteCarloEngine.js';
-import { useClientsStore } from './store/clientsStore.js';
+import { useClientsStore, createClient, loadSampleClients } from './store/clientsStore.js';
 import { downloadPortfolioFile, readAndImportPortfolioFile } from './store/portfolioIO.js';
 
 export function RMView() {
@@ -26,8 +27,14 @@ export function RMView() {
   const [selectedClient, setSelectedClient] = useState(null);
   const [termSheetClient, setTermSheetClient] = useState(null);
   const [mcSigma, setMcSigma] = useState(0.22);
+  const [clientEditor, setClientEditor] = useState(null);
   const fileInputRef = useRef(null);
   const fx = useFX();
+
+  const handleClientEditorSave = (patch) => {
+    createClient({ ...patch, imports: [] });
+    setClientEditor(null);
+  };
 
   const handleImportPick = async (e) => {
     const file = e.target.files?.[0];
@@ -88,6 +95,28 @@ export function RMView() {
     () => [...portfolioData].sort((a, b) => b.cost2030 - a.cost2030),
     [portfolioData],
   );
+
+  if (clients.length === 0) {
+    return (
+      <>
+        <RMEmptyState
+          onCreate={() => setClientEditor({ mode: 'add' })}
+          onPick={() => fileInputRef.current?.click()}
+          fileInputRef={fileInputRef}
+          onPickChange={handleImportPick}
+        />
+        <Suspense fallback={null}>
+          {clientEditor && (
+            <ClientEditor
+              mode={clientEditor.mode}
+              onSave={handleClientEditorSave}
+              onCancel={() => setClientEditor(null)}
+            />
+          )}
+        </Suspense>
+      </>
+    );
+  }
 
   return (
     <div className="px-8 py-6 space-y-6" style={{ backgroundColor: canvas, minHeight: 'calc(100vh - 56px)' }}>
@@ -447,13 +476,118 @@ export function RMView() {
 
       <DataSourcesPanel />
 
-      {termSheetClient && (
-        <TermSheet
-          client={termSheetClient}
-          mcVol={mcSigma}
-          onClose={() => setTermSheetClient(null)}
-        />
-      )}
+      <Suspense fallback={null}>
+        {termSheetClient && (
+          <TermSheet
+            client={termSheetClient}
+            mcVol={mcSigma}
+            onClose={() => setTermSheetClient(null)}
+          />
+        )}
+        {clientEditor && (
+          <ClientEditor
+            mode={clientEditor.mode}
+            onSave={handleClientEditorSave}
+            onCancel={() => setClientEditor(null)}
+          />
+        )}
+      </Suspense>
+    </div>
+  );
+}
+
+// ============================================================================
+// RMEmptyState · what the BBVA RM sees on first arrival when the portfolio
+// is empty. Three doors: add the first corporate manually, import a JSON,
+// or pre-load the four-corporate sample for an instant pitch.
+// ============================================================================
+function RMEmptyState({ onCreate, onPick, fileInputRef, onPickChange }) {
+  return (
+    <div
+      className="flex items-center justify-center px-8"
+      style={{ backgroundColor: canvas, minHeight: 'calc(100vh - 56px)' }}
+    >
+      <div className="max-w-[720px] w-full text-center py-16">
+        <div
+          className="inline-flex items-center justify-center mb-6"
+          style={{
+            width: 56, height: 56,
+            borderRadius: '12px',
+            backgroundColor: colors.accentBg,
+            color: colors.accent,
+          }}
+          aria-hidden="true"
+        >
+          <FolderOpen className="w-7 h-7" />
+        </div>
+        <h1
+          className="text-3xl mb-3"
+          style={{ color: colors.ink, fontWeight: 600, letterSpacing: '-0.02em' }}
+        >
+          Your portfolio is empty
+        </h1>
+        <p
+          className="text-sm leading-relaxed mx-auto mb-8"
+          style={{ color: colors.muted, maxWidth: 540 }}
+        >
+          The BBVA CIB cockpit ranks corporate clients by CBAM exposure, sizes peak
+          working-capital needs, and flags Pillar 2 transition-risk add-ons. Bring in
+          your first corporates to start.
+        </p>
+        <div className="flex flex-col items-stretch gap-2 max-w-[360px] mx-auto">
+          <button
+            type="button"
+            onClick={onCreate}
+            className="px-4 py-2.5 text-sm flex items-center justify-center gap-2 transition-colors"
+            style={{
+              backgroundColor: colors.ink,
+              color: '#fff',
+              borderRadius: '999px',
+              fontWeight: 500,
+              boxShadow: '0 1px 2px rgba(11,13,18,0.10)',
+            }}
+          >
+            <Plus className="w-3.5 h-3.5" /> Add a corporate client
+          </button>
+          <button
+            type="button"
+            onClick={onPick}
+            className="px-4 py-2.5 text-sm flex items-center justify-center gap-2 transition-colors"
+            style={{
+              border: `1px solid ${colors.rule}`,
+              backgroundColor: '#fff',
+              color: colors.ink,
+              borderRadius: '999px',
+              fontWeight: 500,
+            }}
+          >
+            <Upload className="w-3.5 h-3.5" /> Import portfolio (.json)
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (window.confirm('Load the four-corporate sample portfolio?')) loadSampleClients();
+            }}
+            className="px-4 py-2.5 text-sm flex items-center justify-center gap-2 transition-colors"
+            style={{
+              border: `1px solid ${colors.rule}`,
+              backgroundColor: '#fff',
+              color: colors.muted,
+              borderRadius: '999px',
+              fontWeight: 500,
+            }}
+          >
+            <Sparkles className="w-3.5 h-3.5" /> Load sample portfolio (4 corporates)
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/json,.json"
+            onChange={onPickChange}
+            style={{ display: 'none' }}
+          />
+        </div>
+      </div>
     </div>
   );
 }

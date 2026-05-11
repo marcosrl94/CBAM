@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
-import { ChevronDown, Plus, Pencil, Copy, Trash2, RotateCcw, Check, Download, Upload } from 'lucide-react';
+import { ChevronDown, Plus, Pencil, Copy, Trash2, Check, Download, Upload, Sparkles, Eraser } from 'lucide-react';
 import { colors } from './theme.js';
 import {
   useClientsStore,
   selectClient,
   duplicateClient,
   deleteClient,
-  resetToDefaults,
+  loadSampleClients,
+  resetToEmpty,
 } from './store/clientsStore.js';
 import { downloadPortfolioFile, readAndImportPortfolioFile } from './store/portfolioIO.js';
 
@@ -138,15 +139,28 @@ export function ClientSwitcher({ onCreate, onEdit }) {
           <button
             type="button"
             onClick={() => {
-              if (window.confirm('Discard local changes and restore the four sample clients?')) {
-                resetToDefaults();
+              if (window.confirm('Replace your portfolio with the four-corporate sample? Your current data will be lost.')) {
+                loadSampleClients();
                 setOpen(false);
               }
             }}
             className="w-full px-4 py-2.5 text-left flex items-center gap-2 text-xs hover:bg-stone-100 border-t"
             style={{ color: colors.muted, borderColor: colors.rule }}
           >
-            <RotateCcw className="w-3 h-3" /> Reset to sample clients
+            <Sparkles className="w-3 h-3" /> Load sample portfolio (4 corporates)
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (window.confirm('Wipe the entire portfolio? Cannot be undone.')) {
+                resetToEmpty();
+                setOpen(false);
+              }
+            }}
+            className="w-full px-4 py-2.5 text-left flex items-center gap-2 text-xs hover:bg-stone-100 border-t"
+            style={{ color: colors.muted, borderColor: colors.rule }}
+          >
+            <Eraser className="w-3 h-3" /> Reset to empty
           </button>
         </div>
       )}

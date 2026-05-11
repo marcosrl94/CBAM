@@ -49,7 +49,7 @@ esto requiere ser banco *y* tener motor de cálculo, que ningún proveedor
 
 ## 3. Estado actual y próximos pasos
 
-**Commit de referencia:** `c95f4b0` (E6.0 visual port).
+**Commit de referencia:** `9477760` + WIP (empty-state onboarding + code-split).
 
 **Hecho ✅:**
 - Motor CBAM con lookup por CN code (Annex IV) + fallback sectorial, indirect
@@ -70,7 +70,20 @@ esto requiere ser banco *y* tener motor de cálculo, que ningún proveedor
 - **Persistencia multi-cliente**: store con localStorage (`cbam.clients.v1`),
   CRUD de clientes y líneas de import vía modal portals (`ClientEditor`,
   `ImportLineEditor`), `ClientSwitcher` en header, export/import de
-  portfolio en JSON con validación. Reset-to-seed disponible.
+  portfolio en JSON con validación. **Default state = empty** — los seed
+  fixtures viven en `data/sampleClients.js` y solo entran vía
+  `loadSampleClients()` (CTA explícito en empty states + en `ClientSwitcher`).
+- **Empty-state onboarding**: cuando el portfolio está vacío,
+  `ClientView` muestra hero "Set up your CBAM profile" (3 CTAs: profile /
+  load sample / import JSON) y `RMView` muestra "Your portfolio is empty"
+  (3 CTAs: add corporate / import / load sample). Ambos roles pueden
+  sembrar — el motor y el store son idénticos por debajo. Cuando hay
+  cliente pero `imports.length === 0`, la tabla de imports muestra empty
+  state secundario con CTA "Add your first import line".
+- **Code-splitting**: `ClientView` y `RMView` lazy-loaded en `App.jsx`;
+  `TermSheet`, `ClientEditor`, `ImportLineEditor` lazy-loaded dentro de
+  cada vista. Bundle inicial ~58 kB gz (vs 200 kB gz monolítico previo);
+  recharts y deps comunes hoisted en chunk vendor compartido.
 - **Test suite (vitest)**: 25 tests cubriendo cashflowEngine (Art. 22(1)/(2),
   FIFO, seasonality presets, pricePath override) y monteCarloEngine
   (invariantes P10≤P50≤P90, anchor 2026 colapsado, σ-sensitivity, vol/trials
@@ -86,8 +99,9 @@ esto requiere ser banco *y* tener motor de cálculo, que ningún proveedor
   feb 2027) — requiere build-time fetch o backend ETL.
 - Backend de persistencia (post-localStorage): cuando entre uso real, mover
   el store a una API con auth.
-- Code-splitting del bundle (~691 kB JS, 200 kB gz) — vía `import()` dinámico
-  de TermSheet/RMView si hace falta servir la vista cliente sola.
+- Onboarding wizard chained: tras "Set up profile" en empty state, abrir
+  automáticamente ImportLineEditor para guiar al primer KPI sin click extra.
+  Hoy son dos clicks separados (decisión consciente — más en control).
 
 **Decisiones abiertas:**
 - ¿Branding final? Usamos "Carbon·Edge" como nombre del producto interno.
@@ -129,8 +143,14 @@ esto requiere ser banco *y* tener motor de cálculo, que ningún proveedor
 - Feed live (FX): `src/cbam/feeds/fxFeed.js`.
 - UI por rol: `ClientView.jsx`, `RMView.jsx`.
 - Persistencia: `src/cbam/store/clientsStore.js` (localStorage,
-  `useSyncExternalStore`) y `portfolioIO.js` (download / file-pick).
+  `useSyncExternalStore`; default empty + `loadSampleClients` /
+  `resetToEmpty` actions) y `portfolioIO.js` (download / file-pick).
+- Seed fixtures: `src/cbam/data/sampleClients.js` (4 corporates).
+  **No referenciar desde el motor** — el engine es data-agnostic; las
+  fixtures solo entran al store vía CTA explícito del usuario.
 - Editores modales: `ClientEditor.jsx`, `ImportLineEditor.jsx`, `ClientSwitcher.jsx`.
+- Empty states: `ClientEmptyState` (final de `ClientView.jsx`) y
+  `RMEmptyState` (final de `RMView.jsx`).
 - Print artifact: `TermSheet.jsx` (portal a `body`, print CSS oculta el resto).
 - Trazabilidad: `DataSourcesPanel.jsx` + `data/sources.js`.
 - Design tokens + primitives: `src/cbam/theme.js` (canvas/panel/ink/NFQ +

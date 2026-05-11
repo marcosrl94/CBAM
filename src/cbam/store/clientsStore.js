@@ -18,7 +18,7 @@
 // ============================================================================
 
 import { useSyncExternalStore } from 'react';
-import { SAMPLE_CLIENTS } from '../cbamEngine.js';
+import { SAMPLE_CLIENTS } from '../data/sampleClients.js';
 
 const STORAGE_KEY = 'cbam.clients.v1';
 const VERSION = 1;
@@ -27,6 +27,12 @@ function deepClone(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
+/** Empty starting state — first install lands here, both views show empty UX. */
+function buildEmpty() {
+  return { version: VERSION, selectedId: null, clients: [] };
+}
+
+/** Pre-populated demo state — opt-in via `loadSampleClients()`. */
 function buildSeed() {
   const clients = deepClone(SAMPLE_CLIENTS);
   return {
@@ -37,7 +43,7 @@ function buildSeed() {
 }
 
 function load() {
-  if (typeof window === 'undefined') return buildSeed();
+  if (typeof window === 'undefined') return null;
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
@@ -49,7 +55,7 @@ function load() {
   }
 }
 
-let state = load() ?? buildSeed();
+let state = load() ?? buildEmpty();
 const listeners = new Set();
 
 function persist() {
@@ -127,9 +133,10 @@ export function updateClientImports(id, imports) {
 }
 
 export function deleteClient(id) {
-  if (state.clients.length <= 1) return; // Always keep at least one
   const remaining = state.clients.filter(c => c.id !== id);
-  const selectedId = state.selectedId === id ? remaining[0].id : state.selectedId;
+  const selectedId = state.selectedId === id
+    ? (remaining[0]?.id ?? null)
+    : state.selectedId;
   state = { ...state, clients: remaining, selectedId };
   persist();
 }
@@ -153,10 +160,24 @@ export function duplicateClient(id) {
   return newClientId;
 }
 
-export function resetToDefaults() {
+/** Wipe portfolio to its empty state. Used by the empty-state CTA + onboarding. */
+export function resetToEmpty() {
+  state = buildEmpty();
+  persist();
+}
+
+/**
+ * Replace portfolio with the bundled four-corporate sample. The headline
+ * "Load sample portfolio" CTA from the RM/Client empty states routes here,
+ * and the ClientSwitcher exposes it as "Load sample portfolio" too.
+ */
+export function loadSampleClients() {
   state = buildSeed();
   persist();
 }
+
+/** @deprecated kept for backwards-compat with older call sites. Use `loadSampleClients`. */
+export const resetToDefaults = loadSampleClients;
 
 // ============================================================================
 // Portfolio import / export (JSON)
