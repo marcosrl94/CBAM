@@ -33,8 +33,11 @@ esto requiere ser banco *y* tener motor de cálculo, que ningún proveedor
 
 - **Frontend:** Vite 8 + React 19 + Tailwind 4 (artifact embebible, sin
   backend). recharts para gráficas, lucide-react para iconos.
-- **Build:** `npm run build` produce `dist/` estático (~691 kB JS minificado,
-  ~200 kB gzip). Se puede embeber vía iframe + SSO en el portal de BBVA
+- **Build:** `npm run build` produce `dist/` estático code-split.
+  Bundle inicial ~184 kB (58 kB gz); recharts + deps comunes en un chunk
+  compartido ~361 kB (107 kB gz) que entra al cargar la primera vista;
+  `TermSheet`, `ClientEditor`, `ImportLineEditor` en chunks de 4–20 kB
+  por demanda. Se puede embeber vía iframe + SSO en el portal de BBVA
   Net Cash o servir como standalone.
 - **Sin variables de entorno requeridas.** La única llamada de red es a
   Frankfurter (USD→EUR, ECB reference rates) que es free + CORS-enabled +
@@ -49,7 +52,7 @@ esto requiere ser banco *y* tener motor de cálculo, que ningún proveedor
 
 ## 3. Estado actual y próximos pasos
 
-**Commit de referencia:** `9477760` + WIP (empty-state onboarding + code-split).
+**Commit de referencia:** `060d929` (constructible from zero · empty-state onboarding + code-splitting).
 
 **Hecho ✅:**
 - Motor CBAM con lookup por CN code (Annex IV) + fallback sectorial, indirect
@@ -129,7 +132,10 @@ esto requiere ser banco *y* tener motor de cálculo, que ningún proveedor
   Inter (body/headers) + JetBrains Mono (micro-labels uppercase
   `tracking-[0.12em]`). Componentes en `ui.jsx`: `Card`, `Stat`, `KpiCard`,
   `Pill`, `MicroLabel`. Sin Tiempos / Söhne / navy / cream / teal — quedaron
-  fuera en `c95f4b0`. Sin emojis ni gradientes en producción.
+  fuera en `c95f4b0`. Tampoco Source Serif 4 / Inter Tight: el `<style>`
+  global que los inyectaba en `App.jsx` se eliminó en `060d929` (forzaba
+  serif en `h1/h2/h3`). Inter se carga una sola vez vía `index.html` +
+  `index.css`; no añadir más font-faces. Sin emojis ni gradientes en producción.
 - **Charts**: paleta cíclica vía `chartSeriesFills`
   (blue → orange → purple → green → red). No introducir nuevos hex inline.
 - **Tests**: cualquier cambio en `cashflowEngine` o `monteCarloEngine` debe
